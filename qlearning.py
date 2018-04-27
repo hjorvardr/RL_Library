@@ -12,6 +12,7 @@ def updateQ(Q, s_t, s_tn, a, R, alpha, gamma):
     """
     a_max = np.argmax(Q[s_tn])
     Q[s_t, a] = (1 - alpha)*Q[s_t, a] + alpha * (R + gamma*Q[s_tn, a_max])
+    #Q[s_t,a] = Q[s_t,a] + alpha*(R + gamma*np.max(Q[s_tn,:]) - Q[s_t,a])
     return Q
 
 def choose_policy(state):
@@ -24,3 +25,6 @@ def choose_policy(state):
     indexes = np.arange(len(state))[state == v_max]
     rn.shuffle(indexes)
     return indexes[0]
+
+def choose_policy_greedy(state,env,i_episode):
+    return np.argmax(state + np.random.randn(1,env.action_space.n)*(1./(i_episode+1)))

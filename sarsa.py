@@ -24,5 +24,8 @@ def choose_policy(state):
     rn.shuffle(indexes)
     return indexes[0]
 
+def choose_policy_greedy(state,env,i_episode):
+    return np.argmax(state + np.random.randn(1,env.action_space.n)*(1./(i_episode+1)))
+
 def gen_policy(Q):
     return [choose_policy(state) for state in Q]
