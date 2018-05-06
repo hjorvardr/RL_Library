@@ -28,3 +28,22 @@ def next_action1(state):
 
 def next_action2(state,i_episode):
     return np.argmax(state + np.random.randn(1,len(state))*(1./(i_episode+1)))
+
+def next_action3(state,epsilon):
+    """
+    It chooses the best action given the current state.
+    Paramteres:
+    state -> array of possible actions in the current state.
+    """
+    if np.random.uniform() > epsilon:
+        max_value = np.amax(state)
+        max_indexes = np.arange(len(state))[state == max_value]
+        rn.shuffle(max_indexes)
+        return max_indexes[0]
+    return np.argmax(np.random.uniform(0,1, size=4))
+
+def get_epsilon(k,n):
+    res = (n - k) / n
+    if res < 0.01:
+        return 0.01
+    return res
