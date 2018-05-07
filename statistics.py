@@ -9,8 +9,4 @@ def ma(ts, q):
     return res
 
 def accuracy(results):
-    res_count = 0
-    for x in results:
-        if x == 1:
-            res_count += 1
-    return str(res_count / len(results) * 100) + "%"
+    return results[1] / (results[0]+results[1]) * 100

@@ -47,3 +47,11 @@ def get_epsilon(k,n):
     if res < 0.01:
         return 0.01
     return res
+
+
+def get_epsilon_exp(n):
+    res = 1 / (n + 1)
+    if res < 0.01:
+        return 0.01
+    return res
+    
