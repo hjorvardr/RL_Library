@@ -38,7 +38,7 @@ def next_action3(action,epsilon):
     """
     if np.random.uniform() > epsilon:
         return action
-    return np.argmax(np.random.uniform(0,1, size=4))
+    return np.argmax(np.random.uniform(0,1, size=6))
 
 def gen_policy(Q):
     return [next_action1(state) for state in Q]
