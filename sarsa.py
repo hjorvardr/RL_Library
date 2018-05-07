@@ -1,19 +1,21 @@
 import numpy as np
 import numpy.random as rn
 
-def updateQ(Q, s_t, s_tn, a, a_n, R, alpha, gamma):
+def updateQ(Q, state, new_state, action, next_action, reward, alpha, gamma):
     """
     It applies Q-Learning update rule.
     Parameters:
     Q -> Q matrix
-    s_tn -> new state
-    R -> reward
-    a -> action
+    state -> current state t
+    new_state -> next state t
+    reward -> reward
+    action -> current action
+    next_action -> next action
     """
-    Q[s_t, a] = (1 - alpha) * Q[s_t, a] + alpha * (R + gamma*Q[s_tn, a_n])
+    Q[state, action] = (1 - alpha) * Q[state, action] + alpha * (reward + gamma*Q[new_state, next_action])
     return Q
 
-def choose_policy(state):
+def next_action1(state):
     """
     It chooses the best action given the current state.
     Paramteres:
@@ -24,8 +26,31 @@ def choose_policy(state):
     rn.shuffle(indexes)
     return indexes[0]
 
-def choose_policy_greedy(state,env,i_episode):
-    return np.argmax(state + np.random.randn(1,env.action_space.n)*(1./(i_episode+1)))
+def next_action2(state,i_episode):
+    return np.argmax(state + np.random.randn(1,len(state))*(1./(i_episode+1)))
+
+def next_action3(action,epsilon):
+    """
+    It chooses the best action given the current state.
+    Paramteres:
+    action -> best action to perform.
+    epsilon -> exploration/exploitation probability.
+    """
+    if np.random.uniform() > epsilon:
+        return action
+    return np.argmax(np.random.uniform(0,1, size=4))
 
 def gen_policy(Q):
-    return [choose_policy(state) for state in Q]
+    return [next_action1(state) for state in Q]
+
+def get_epsilon(k,n):
+    res = (n - k) / n
+    if res < 0.01:
+        return 0.01
+    return res
+
+def get_epsilon_exp(n):
+    res = 1 / (n + 1)
+    if res < 0.01:
+        return 0.01
+    return res
