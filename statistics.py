@@ -9,4 +9,7 @@ def ma(ts, q):
     return res
 
 def accuracy(results):
+    """
+    Evaluate the accuracy of results, considering victories and defeats.
+    """
     return results[1] / (results[0]+results[1]) * 100

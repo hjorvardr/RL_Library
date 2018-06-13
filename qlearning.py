@@ -17,7 +17,7 @@ def updateQ(Q, state, new_state, action, reward, alpha, gamma):
 
 def updateQ_tensor(Q, state, new_state, action, reward, alpha, gamma):
     """
-    It applies Q-Learning update rule.
+    It applies Q-Learning update rule considering 3-dimensional matrices. It is used in MountainCar-v0 environment.
     Parameters:
     Q -> Q matrix
     state -> current state t
