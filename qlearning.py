@@ -15,6 +15,20 @@ def updateQ(Q, state, new_state, action, reward, alpha, gamma):
     Q[state, action] = (1 - alpha)*Q[state, action] + alpha * (reward + gamma*Q[new_state, future_action])
     return Q
 
+def updateQ_tensor(Q, state, new_state, action, reward, alpha, gamma):
+    """
+    It applies Q-Learning update rule.
+    Parameters:
+    Q -> Q matrix
+    state -> current state t
+    new_state -> next state t
+    reward -> reward
+    action -> current action
+    """
+    future_action = np.argmax(Q[new_state[0],new_state[1]]) # Find the best action to perform at time t+1
+    Q[state[0],state[1], action] = (1 - alpha)*Q[state[0],state[1], action] + alpha * (reward + gamma*Q[new_state[0],new_state[1], future_action])
+    return Q
+
 def next_action1(state):
     """
     It chooses the best action given the current state.
