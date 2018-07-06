@@ -21,7 +21,7 @@ class DQNAgent:
         # Tensorboard parameters
         self.tb_step = 0
         self.tb_gather = 500
-        self.tensorboard = TensorBoard(log_dir='./Monitoring/%s' % tb_dir, write_graph=False, write_images=False)
+        self.tensorboard = TensorBoard(log_dir='./Monitoring/%s' % tb_dir, histogram_freq=0, write_graph=False)
         print("Tensorboard Loaded! (log_dir: %s)" % self.tensorboard.log_dir)
         # Exploration/Exploitation parameters
         self.epsilon = 1
@@ -45,15 +45,14 @@ class DQNAgent:
 
             if self.use_ddqn:
                 self.target_model = self.build_model(layers)
+        self.evaluate_model.summary()
 
 
     def build_model(self, layers):
         model = Sequential()
         for l in layers:
             model.add(l)
-        
         model.compile(loss=self.loss, optimizer=self.optimizer)
-        model.summary()
 
         return model
 
