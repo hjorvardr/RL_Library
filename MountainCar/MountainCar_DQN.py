@@ -1,26 +1,19 @@
-import gym
 import os
+import gym
 import numpy as np
 import tensorflow as tf
-from dqn_lib import DQNAgent
 from keras import backend as K
 from keras.layers import Dense
 from time import time
 from tqdm import tqdm
+from dqn_lib import DQNAgent
 
-def experiment(n_episodes = 5000, max_action = 100000, default_policy = False, policy = np.zeros(64), render = False):
-    
-    """
-    Execute an experiment given a configuration
-    Parameters:
-    n_episodes -> number of completed/failed plays
-    max_action -> maximum number of actions per episode
-    """
+def experiment(n_episodes, max_action, default_policy=False, policy=None, render=False):
 
     with tf.device('/cpu:0'):
-        Res = [0,0] # array of results accumulator: {[0]: Loss, [1]: Victory}
-        Scores = [] # Cumulative rewards
-        Steps = [] # Steps per episode
+        res = [0,0] # array of results accumulator: {[0]: Loss, [1]: Victory}
+        scores = [] # Cumulative rewards
+        steps = [] # Steps per episode
         
         env = gym.make('MountainCar-v0')
 
@@ -32,10 +25,13 @@ def experiment(n_episodes = 5000, max_action = 100000, default_policy = False, p
         input_dim = env.observation_space.shape[0]
         output_dim = env.action_space.n
 
-        layer1 = Dense(15, input_dim = input_dim, activation = 'relu')
+        layer1 = Dense(15, input_dim=input_dim, activation='relu')
         layer2 = Dense(output_dim)
             
-        agent = DQNAgent(input_dim, output_dim, [layer1, layer2], use_ddqn=True)
+        if default_policy:
+            agent = DQNAgent(input_dim, output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy)
+        else:
+            agent = DQNAgent(input_dim, output_dim, [layer1, layer2], use_ddqn=True)
 
         for _ in tqdm(range(n_episodes), desc="Episode"):
             state = env.reset()
@@ -53,18 +49,18 @@ def experiment(n_episodes = 5000, max_action = 100000, default_policy = False, p
                 new_state, reward, end, _ = env.step(next_action)
 
                 reward = abs(new_state[0] - (-0.5)) # r in [0, 1]
-                new_state = np.reshape(new_state,[1,2])
+                new_state = np.reshape(new_state, [1,2])
                 
                 agent.memoise((state, next_action, reward, new_state, end))
 
                 if end:
                     if t == env._max_episode_steps - 1:
-                        Res[0] += 1
+                        res[0] += 1
                     else:
-                        Res[1] += 1
+                        res[1] += 1
                         print("ENTRATO!,", t, "steps")
 
-                    Steps.append(t)
+                    steps.append(t)
                     break
                 else:
                     state = new_state
@@ -74,10 +70,13 @@ def experiment(n_episodes = 5000, max_action = 100000, default_policy = False, p
                 t += 1
 
             cumulative_reward += reward
-            Scores.append(cumulative_reward)
+            scores.append(cumulative_reward)
         env.close()
-        return { "results": np.array(Res), "steps": np.array(Steps), "scores": np.array(Scores), "agent": agent }
+        return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
     
-config = {"n_episodes": 120, "max_action": 10000, "render": False}
-res = experiment(**config)
+# Training
+res = experiment(120, 10000)
 res["agent"].save_model("model1")
+
+# Testing
+#res = experiment(10, 500, render=True, default_policy=True, policy="SavedNetworks/Test_15")
