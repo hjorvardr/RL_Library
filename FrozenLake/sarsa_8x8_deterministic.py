@@ -28,7 +28,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
     for i_episode in tqdm(range(n_episodes)):
         state = env.reset()
         cumulative_reward = 0
-        agent.update_policy()
+        agent.extract_policy()
         
         for t in range(max_action):
             if (render):
