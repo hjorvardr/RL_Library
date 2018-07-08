@@ -21,9 +21,9 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
     env.seed(91)
     
     if (default_policy):
-        agent = SARSAAgent(env.observation_space.n, env.action_space.n, policy=policy)
+        agent = SARSAAgent([env.observation_space.n, env.action_space.n], policy=policy)
     else:
-        agent = SARSAAgent(env.observation_space.n, env.action_space.n)   
+        agent = SARSAAgent([env.observation_space.n, env.action_space.n])
 
     for i_episode in tqdm(range(n_episodes)):
         state = env.reset()

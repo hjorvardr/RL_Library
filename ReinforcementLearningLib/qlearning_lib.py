@@ -3,14 +3,14 @@ import numpy as np
 
 class QLAgent:
 
-    def __init__(self, q_height, q_width, alpha=0.8, gamma=0.95, policy=None):
+    def __init__(self, shape, alpha=0.8, gamma=0.95, policy=None):
         self.alpha = alpha # learning rate
         self.gamma = gamma # discount factor
-        self.Q = np.zeros([q_height, q_width])
+        self.Q = np.zeros(shape)
         self.epsilon = 0
         self.epsilon_lower_bound = 0.01
         self.policy = policy
-        self.actions = q_width
+        self.actions = shape[-1]
         np.random.seed(91)
 
     def update_q(self, state, new_state, action, reward):
@@ -23,7 +23,7 @@ class QLAgent:
         action -> current action
         """
         future_action = np.argmax(self.Q[new_state]) # Find the best action to perform at time t+1
-        self.Q[state, action] = (1 - self.alpha) * self.Q[state, action] + self.alpha * (reward + self.gamma * self.Q[new_state, future_action])
+        self.Q[state][action] = (1 - self.alpha) * self.Q[state][action] + self.alpha * (reward + self.gamma * self.Q[new_state][future_action])
 
     def act(self, state, episode_number):
         if (self.policy is not None):

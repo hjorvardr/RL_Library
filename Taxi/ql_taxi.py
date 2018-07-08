@@ -21,9 +21,9 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
     env.seed(91)
     
     if (default_policy):
-        agent = QLAgent(env.observation_space.n, env.action_space.n, policy=policy)
+        agent = QLAgent([env.observation_space.n, env.action_space.n], policy=policy)
     else:
-        agent = QLAgent(env.observation_space.n, env.action_space.n)   
+        agent = QLAgent([env.observation_space.n, env.action_space.n])
 
     for i_episode in tqdm(range(n_episodes)):
         state = env.reset()
@@ -60,7 +60,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
 # Training
 res = experiment(10000, 100)
 learnt_policy = np.argmax(res["Q"], axis=1)
-print("Policy learnt: ", learnt_policy)
+#print("Policy learnt: ", learnt_policy)
 
 # Testing
 res2 = experiment(50000, 1000, default_policy=True, policy=learnt_policy)

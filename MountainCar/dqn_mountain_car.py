@@ -1,17 +1,17 @@
 import os
+import time
 import gym
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
 from keras.layers import Dense
-from time import time
 from tqdm import tqdm
 from dqn_lib import DQNAgent
 
 def experiment(n_episodes, max_action, default_policy=False, policy=None, render=False):
 
     with tf.device('/cpu:0'):
-        res = [0,0] # array of results accumulator: {[0]: Loss, [1]: Victory}
+        res = [0, 0] # array of results accumulator: {[0]: Loss, [1]: Victory}
         scores = [] # Cumulative rewards
         steps = [] # Steps per episode
         
@@ -37,7 +37,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
             state = env.reset()
             cumulative_reward = 0
 
-            state = np.reshape(state,[1,2])
+            state = np.reshape(state, [1, 2])
             
             t = 0
             #for t in tqdm(range(env._max_episode_steps), desc="Action", leave=False):
@@ -49,7 +49,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                 new_state, reward, end, _ = env.step(next_action)
 
                 reward = abs(new_state[0] - (-0.5)) # r in [0, 1]
-                new_state = np.reshape(new_state, [1,2])
+                new_state = np.reshape(new_state, [1, 2])
                 
                 agent.memoise((state, next_action, reward, new_state, end))
 
@@ -67,7 +67,6 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                     cumulative_reward += reward
                 
                 agent.learn()
-                t += 1
 
             cumulative_reward += reward
             scores.append(cumulative_reward)
