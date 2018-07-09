@@ -8,6 +8,14 @@ from keras.layers import Dense
 from tqdm import tqdm
 from dqn_lib import DQNAgent
 
+
+def accuracy(results):
+    """
+    Evaluate the accuracy of results, considering victories and defeats.
+    """
+    return results[1] / (results[0] + results[1]) * 100
+
+
 def experiment(n_episodes, max_action, default_policy=False, policy=None, render=False):
 
     with tf.device('/cpu:0'):
@@ -16,6 +24,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
         steps = [] # Steps per episode
         
         env = gym.make('MountainCar-v0')
+        env.seed(91)
 
         if default_policy:
             env._max_episode_steps = 500
@@ -72,10 +81,18 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
             scores.append(cumulative_reward)
         env.close()
         return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
-    
+
+
 # Training
 res = experiment(120, 10000)
 res["agent"].save_model("model1")
 
+#np.savetxt("scores/dqn_mountain_car.csv", res["scores"], delimiter=',')
+
 # Testing
-#res = experiment(10, 500, render=True, default_policy=True, policy="SavedNetworks/Test_15")
+res2 = experiment(100, 200, render=False, default_policy=True, policy="model1")
+print("Testing accuracy: %s, Training mean score: %s" % (accuracy(res2["results"]), np.mean(res["scores"])))
+print("Testing accuracy: %s" % accuracy(res2["results"]))
+
+# Rendering
+#experiment(10, 500, render=True, default_policy=True, policy="model1")

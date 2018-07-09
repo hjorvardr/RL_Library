@@ -72,6 +72,8 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
 res = experiment(30000, 200)
 learnt_policy = np.argmax(res["Q"], axis=2)
 
+#np.savetxt("scores/ql_mountain_car.csv", res["scores"], delimiter=',')
+
 # Testing
 res2 = experiment(250, 250, default_policy=True, policy=learnt_policy)
 print("Testing accuracy: %s, Training mean score: %s" % (accuracy(res2["results"]), np.mean(res["scores"])))

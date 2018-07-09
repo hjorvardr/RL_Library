@@ -57,6 +57,8 @@ res = experiment(100000, 1000)
 learnt_policy = np.argmax(res["Q"], axis=1)
 print("Policy learnt: ", learnt_policy)
 
+#np.savetxt("scores/sarsa_8x8.csv", res["steps"], delimiter=',')
+
 # Testing
 res2 = experiment(5000, 1000, default_policy=True, policy=learnt_policy)
 print("Testing accuracy: %s, Training mean score: %s" % (accuracy(res2["results"]), np.mean(res["scores"])))
