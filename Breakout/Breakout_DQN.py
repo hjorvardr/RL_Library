@@ -1,3 +1,4 @@
+import random as ran
 import os
 import time
 import gym
@@ -19,17 +20,22 @@ def pre_processing(observe):
     return processed_observe
 
 
+# 0: stay
+# 1: start
+# 2: right
+# 3: left
+
 def experiment(n_episodes, max_action, default_policy=False, policy=None, render=False):
 
-    with tf.device('/gpu:0'):
+    with tf.device('/cpu:0'):
         res = [0,0] # array of results accumulator: {[0]: Loss, [1]: Victory}
         scores = [] # Cumulative rewards
         steps = [] # Steps per episode
         
-        env = gym.make('Breakout-v0')
+        env = gym.make('BreakoutDeterministic-v4')
 
         if default_policy:
-            env._max_episode_steps = 500
+            env._max_episode_steps = 500000
         else:
             env._max_episode_steps = 1000000
         
@@ -41,7 +47,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                   Conv2D(64, (3, 3), strides=(1, 1), activation='relu'),
                   Flatten(),
                   Dense(512, activation='relu'),
-                  Dense(3)]
+                  Dense(output_dim)]
             
         if default_policy:
             agent = DQNAgent(input_dim, output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy)
@@ -56,8 +62,8 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
             stack = np.stack((state, state, state, state), axis=2)
             stack = np.reshape([stack], (1, 84, 84, 4))
 
-            # for _ in range(random.randint(1, agent.no_opsteps)):
-            #    observe, , ,  = env.step(1)
+            for _ in range(ran.randint(1, 4)):
+               _,_,_,_ = env.step(1)
             
             start_life = 5
             dead = False
@@ -66,9 +72,13 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
             for t in range(env._max_episode_steps):
                 if (render):
                     env.render()
+                    # time.sleep(2)
 
                 next_action = agent.act(stack)
                 new_state, reward, end, info = env.step(next_action)
+                # reward = np.clip(reward, -1., 1.)
+
+                # print(next_action, reward)
 
                 new_state = np.reshape(pre_processing(new_state), (1, 84, 84, 1))
                 new_stack = np.append(new_state, stack[:, :, :, :3], axis=3)
@@ -106,8 +116,8 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
         return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
     
 # Training
-res = experiment(10, 10000000, render=True)
-res["agent"].save_model("model1")
+# res = experiment(10, 10000000, render=True)
+# res["agent"].save_model("model1")
 
 # Testing
-#res = experiment(10, 500, render=True, default_policy=True, policy="SavedNetworks/Test_1")
+res = experiment(10, 10000000, render=True, default_policy=True, policy="SavedNetworks/model50ep")
