@@ -27,17 +27,17 @@ def pre_processing(observe):
 
 def experiment(n_episodes, max_action, default_policy=False, policy=None, render=False):
 
-    with tf.device('/cpu:0'):
+    with tf.device('/gpu:0'):
         res = [0,0] # array of results accumulator: {[0]: Loss, [1]: Victory}
         scores = [] # Cumulative rewards
         steps = [] # Steps per episode
         
         env = gym.make('BreakoutDeterministic-v4')
 
-        if default_policy:
-            env._max_episode_steps = 500000
-        else:
-            env._max_episode_steps = 1000000
+        # if default_policy:
+        #     env._max_episode_steps = 5000000
+        # else:
+        #     env._max_episode_steps = 1000000
         
         input_dim = env.observation_space.shape[0]
         output_dim = env.action_space.n
@@ -50,39 +50,37 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                   Dense(output_dim)]
             
         if default_policy:
-            agent = DQNAgent(input_dim, output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy)
+            agent = DQNAgent(input_dim, output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0.05, epsilon_lower_bound=0.05)
         else:
-            agent = DQNAgent(input_dim, output_dim, layers, use_ddqn=True)
+            agent = DQNAgent(input_dim, output_dim, layers, use_ddqn=True, memory_size=400000, gamma=0.99)
 
-        for _ in tqdm(range(n_episodes), desc="Episode"):
+        for episode_number in tqdm(range(n_episodes), desc="Episode"):
             frame = env.reset()
             cumulative_reward = 0
 
+            for _ in range(1, ran.randint(1, 30)):
+               frame,_,_,_ = env.step(1)
+                
             state = pre_processing(frame)
             stack = np.stack((state, state, state, state), axis=2)
             stack = np.reshape([stack], (1, 84, 84, 4))
-
-            for _ in range(ran.randint(1, 4)):
-               _,_,_,_ = env.step(1)
             
             start_life = 5
             dead = False
             t = 0
-            #for t in tqdm(range(env._max_episode_steps), desc="Action", leave=False):
-            for t in range(env._max_episode_steps):
+            while True:
                 if (render):
                     env.render()
-                    # time.sleep(2)
+                    time.sleep(0.001)
 
                 next_action = agent.act(stack)
                 new_state, reward, end, info = env.step(next_action)
-                # reward = np.clip(reward, -1., 1.)
+                reward = np.clip(reward, -1., 1.)
 
-                # print(next_action, reward)
+                cumulative_reward += reward
 
                 new_state = np.reshape(pre_processing(new_state), (1, 84, 84, 1))
                 new_stack = np.append(new_state, stack[:, :, :, :3], axis=3)
-                #new_stack = np.insert(stack, 0, new_state, axis=3)[:, :, :, :4]
                 
                 agent.memoise((stack, next_action, reward, new_stack, end))
 
@@ -108,16 +106,20 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                         stack = new_stack
                 
                 agent.learn()
-                #t += 1
+                t += 1
 
-            cumulative_reward += reward
+            print(cumulative_reward)
             scores.append(cumulative_reward)
+            if episode_number > 300 and episode_number % 50 == 0:
+                agent.save_model("partial_model")
+
+        
         env.close()
         return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
     
 # Training
-# res = experiment(10, 10000000, render=True)
-# res["agent"].save_model("model1")
+res = experiment(10000, 10000000, render=False)
+res["agent"].save_model("model10000eps")
 
 # Testing
-res = experiment(10, 10000000, render=True, default_policy=True, policy="SavedNetworks/model50ep")
+res = experiment(10, 10000000, render=True, default_policy=True, policy="SavedNetworks/modelnew900")

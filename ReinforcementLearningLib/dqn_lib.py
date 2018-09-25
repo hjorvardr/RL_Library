@@ -4,14 +4,16 @@ import numpy as np
 import tensorflow as tf
 from keras import backend as K
 from keras.models import Sequential, load_model
-from keras.optimizers import RMSprop
+from keras.optimizers import RMSprop, Adam
 from keras.callbacks import TensorBoard
-
 
 class DQNAgent:
 
     def __init__(self, input_size, output_size, layers, memory_size=3000, batch_size=32,
-                 use_ddqn=False, default_policy=False, model_filename=None, tb_dir="tb_log"):
+                 use_ddqn=False, default_policy=False, model_filename=None, tb_dir="tb_log",
+                 epsilon=1, epsilon_lower_bound=0.1, epsilon_decay_function=(lambda e: e - 0.0000018),
+                 gamma=0.95, optimizer=RMSprop(0.00025, epsilon=0.01), learn_thresh=50000,
+                 update_rate=10000):
         self.input_size = input_size
         self.output_size = output_size
         self.memory_size = memory_size
@@ -25,19 +27,17 @@ class DQNAgent:
                                        histogram_freq=0, write_graph=False)
         print("Tensorboard Loaded! (log_dir: %s)" % self.tensorboard.log_dir)
         # Exploration/Exploitation parameters
-        self.epsilon = 1
-        self.epsilon_decay_rate = 0.95
-        self.epsilon_lower_bound = 0.01
-        self.learn_step = 0
+        self.epsilon = epsilon
+        self.epsilon_decay_function = epsilon_decay_function
+        self.epsilon_lower_bound = epsilon_lower_bound
         self.total_steps = 0
         # Learning parameters
-        self.gamma = 0.95
-        self.learning_rate = 0.001
+        self.gamma = gamma
         self.loss = 'mean_squared_error'
-        self.optimizer = RMSprop(self.learning_rate)
+        self.optimizer = optimizer
         self.batch_size = batch_size
-        self.learn_thresh = 1000 # Number of steps from which the network starts learning
-        self.update_rate = 300
+        self.learn_thresh = learn_thresh # Number of steps from which the network starts learning
+        self.update_rate = update_rate
 
         if self.default_policy:
             self.evaluate_model = self.load_model(model_filename)
@@ -78,18 +78,14 @@ class DQNAgent:
         return ran.sample(self.memory, self.batch_size)
 
     def act(self, state):
-        if (self.default_policy):
+        if np.random.uniform() > self.epsilon:
             prediction = self.evaluate_model.predict(state)
-            return np.argmax(prediction[0])
+            next_action = np.argmax(prediction[0])
         else:
-            if np.random.uniform() > self.epsilon:
-                prediction = self.evaluate_model.predict(state)
-                next_action = np.argmax(prediction[0])
-            else:
-                next_action = np.argmax(np.random.uniform(0, 1, size=self.output_size))
+            next_action = np.argmax(np.random.uniform(0, 1, size=self.output_size))
 
         if self.total_steps > self.learn_thresh:
-            self.epsilon = self.epsilon * self.epsilon_decay_rate
+            self.epsilon = self.epsilon_decay_function(self.epsilon)
             self.epsilon = np.amax([self.epsilon, self.epsilon_lower_bound])
 
         self.total_steps += 1
@@ -104,6 +100,7 @@ class DQNAgent:
         if (self.total_steps > self.learn_thresh and
             (self.total_steps % self.update_rate) == 0 and not self.default_policy):
             self.update_target_model()
+            print("model updated")
         if self.total_steps > self.learn_thresh and not self.default_policy:   
             self.replay()
 

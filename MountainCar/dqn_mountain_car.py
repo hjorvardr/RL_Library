@@ -2,6 +2,7 @@ import os
 import time
 import gym
 import numpy as np
+import keras.optimizers 
 import tensorflow as tf
 from keras import backend as K
 from keras.layers import Dense
@@ -38,9 +39,9 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
         layer2 = Dense(output_dim)
             
         if default_policy:
-            agent = DQNAgent(input_dim, output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy)
+            agent = DQNAgent(input_dim, output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0, epsilon_lower_bound=0, learn_thresh=0)
         else:
-            agent = DQNAgent(input_dim, output_dim, [layer1, layer2], use_ddqn=True)
+            agent = DQNAgent(input_dim, output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))
 
         for _ in tqdm(range(n_episodes), desc="Episode"):
             state = env.reset()
