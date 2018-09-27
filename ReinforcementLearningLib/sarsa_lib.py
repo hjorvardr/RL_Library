@@ -7,9 +7,14 @@ class SARSAAgent(QLAgent):
     def __init__(self, shape, alpha=0.8, gamma=0.95, policy=None):
         super().__init__(shape, alpha, gamma, policy)
         self.current_policy = None
+        self.shape = shape
 
     def extract_policy(self):
-        self.current_policy = [self.next_action(state) for state in self.Q] 
+        policy_shape = self.shape
+        policy_shape = policy_shape[:-1]
+        self.current_policy = np.zeros(policy_shape, dtype=int)
+        for idx, _ in np.ndenumerate(self.current_policy):
+            self.current_policy[idx] = self.next_action(self.Q[idx])
 
     def update_q(self, state, new_state, action, reward):
         """
