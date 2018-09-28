@@ -7,12 +7,24 @@ from keras.models import Sequential, load_model
 from keras.optimizers import RMSprop, Adam
 from keras.callbacks import TensorBoard
 
+
+def huber_loss(a, b, in_keras=True):
+    error = a - b
+    quadratic_term = error*error / 2
+    linear_term = abs(error) - 1/2
+    use_linear_term = (abs(error) > 1.0)
+    if in_keras:
+        # Keras won't let us multiply floats by booleans, so we explicitly cast the booleans to floats
+        use_linear_term = K.cast(use_linear_term, 'float32')
+    return use_linear_term * linear_term + (1-use_linear_term) * quadratic_term
+
 class DQNAgent:
 
     def __init__(self, input_size, output_size, layers, memory_size=3000, batch_size=32,
                  use_ddqn=False, default_policy=False, model_filename=None, tb_dir="tb_log",
-                 epsilon=1, epsilon_lower_bound=0.1, epsilon_decay_function=(lambda e: e - 0.0000018),
-                 gamma=0.95, optimizer=RMSprop(0.00025, epsilon=0.01), learn_thresh=50000,
+                 epsilon=1, epsilon_lower_bound=0.1,
+                 epsilon_decay_function=lambda e: (epsilon - epsilon_lower_bound) / 1000000,
+                 gamma=0.95, optimizer=RMSprop(0.00025), learn_thresh=50000,
                  update_rate=10000):
         self.input_size = input_size
         self.output_size = output_size
@@ -33,7 +45,7 @@ class DQNAgent:
         self.total_steps = 0
         # Learning parameters
         self.gamma = gamma
-        self.loss = 'mean_squared_error'
+        self.loss = huber_loss #'mean_squared_error'
         self.optimizer = optimizer
         self.batch_size = batch_size
         self.learn_thresh = learn_thresh # Number of steps from which the network starts learning
@@ -61,18 +73,32 @@ class DQNAgent:
 
     def replay(self):
         pick = self.random_pick()
-        for state, next_action, reward, new_state, end in pick:
-            if not end:
-                reward = reward + self.gamma * np.amax(self.target_model.predict(new_state)[0])
+        if self.use_ddqn == False:
+            for state, next_action, reward, new_state, end in pick:
+                if not end:
+                    reward = reward + self.gamma * np.amax(self.evaluate_model.predict(new_state)[0])
 
-            new_prediction = self.target_model.predict(state)
-            new_prediction[0][next_action] = reward
-            
-            if (self.tb_step % self.tb_gather) == 0:
-                self.evaluate_model.fit(state, new_prediction, verbose=0, callbacks=[self.tensorboard])
-            else:
-                self.evaluate_model.fit(state, new_prediction, verbose=0)
-            self.tb_step += 1
+                new_prediction = self.evaluate_model.predict(state)
+                new_prediction[0][next_action] = reward
+
+                if (self.tb_step % self.tb_gather) == 0:
+                    self.evaluate_model.fit(state, new_prediction, verbose=0, callbacks=[self.tensorboard])
+                else:
+                    self.evaluate_model.fit(state, new_prediction, verbose=0)
+                self.tb_step += 1
+        else:
+            for state, next_action, reward, new_state, end in pick:
+                if not end:
+                    reward = reward + self.gamma * np.amax(self.target_model.predict(new_state)[0])
+
+                new_prediction = self.target_model.predict(state)
+                new_prediction[0][next_action] = reward
+
+                if (self.tb_step % self.tb_gather) == 0:
+                    self.evaluate_model.fit(state, new_prediction, verbose=0, callbacks=[self.tensorboard])
+                else:
+                    self.evaluate_model.fit(state, new_prediction, verbose=0)
+                self.tb_step += 1
 
     def random_pick(self):
         return ran.sample(self.memory, self.batch_size)
@@ -98,7 +124,8 @@ class DQNAgent:
 
     def learn(self):
         if (self.total_steps > self.learn_thresh and
-            (self.total_steps % self.update_rate) == 0 and not self.default_policy):
+            (self.total_steps % self.update_rate) == 0 and not self.default_policy and
+            self.use_ddqn == True):
             self.update_target_model()
             print("model updated")
         if self.total_steps > self.learn_thresh and not self.default_policy:   
@@ -108,4 +135,4 @@ class DQNAgent:
         self.evaluate_model.save('%s.h5' % filename)
     
     def load_model(self, filename):
-        return load_model('%s.h5' % filename)
+        return load_model('%s.h5' % filename, custom_objects={ 'huber_loss': huber_loss })
