@@ -51,12 +51,16 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                   Dense(output_dim)]
             
         if default_policy:
-            agent = DQNAgent(input_dim, output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0.1, epsilon_lower_bound=0.1)
+            agent = DQNAgent(input_dim, output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0.05, epsilon_lower_bound=0.05)
         else:
             agent = DQNAgent(input_dim, output_dim, layers, use_ddqn=True, memory_size=1000000, gamma=0.99)
 
+        gathered_frame = 0
         for episode_number in tqdm(range(n_episodes), desc="Episode"):
             frame = env.reset()
+            if (render):
+                env.render()
+                time.sleep(0.05)
             cumulative_reward = 0
                 
             state = pre_processing(frame)
@@ -64,27 +68,33 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
             stack = np.reshape([stack], (1, 84, 84, 4))
             
             frame,_,_,info = env.step(0)
+            if (render):
+                env.render()
+                time.sleep(0.05)
             has_lost_life = True
             start_life = info['ale.lives']
             t = 0
             while True:
-                if (render):
-                    env.render()
-                    time.sleep(0.05)
-
                 if has_lost_life:
                     next_action = 1
-                    for _ in range(1, ran.randint(1, 4)):
+                    for _ in range(ran.randint(1, 4)):
+                        gathered_frame += 1
                         frame, reward,end,_ = env.step(next_action)
                         new_state = np.reshape(pre_processing(frame), (1, 84, 84, 1))
                         new_stack = np.append(new_state, stack[:, :, :, :3], axis=3)
                         agent.memoise((stack, next_action, reward, new_stack, end))
                         stack = new_stack
+                        if (render):
+                            env.render()
+                            time.sleep(0.05)
 
                     has_lost_life = False
 
                 next_action = agent.act(stack)
                 new_state, reward, end, info = env.step(next_action)
+                if (render):
+                    env.render()
+                    time.sleep(0.05)
                 reward = np.clip(reward, -1., 1.)
 
                 cumulative_reward += reward
@@ -94,6 +104,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                 agent.memoise((stack, next_action, reward, new_stack, end))
 
                 stack = new_stack
+                gathered_frame += 1
                 if info['ale.lives'] < start_life:
                     has_lost_life = True
                     start_life = info['ale.lives']
@@ -102,9 +113,9 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                 if end:
                     if not has_lost_life:
                         res[1] += 1
-                        print("You Won!, steps:", t, "reward:", cumulative_reward)
+                        print("You Won!, steps:", t, "reward:", cumulative_reward, "frames:", gathered_frame)
                     else:
-                        print("You Lost!, steps:", t, "reward:", cumulative_reward)
+                        print("You Lost!, steps:", t, "reward:", cumulative_reward, "frames:", gathered_frame)
                     steps.append(t)
                     break
                 
@@ -113,15 +124,15 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
 
             scores.append(cumulative_reward)
             if episode_number > 300 and episode_number % 50 == 0:
-                agent.save_model("partial_model")
+                agent.save_model("partial_model_breakout")
 
         
         env.close()
         return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
     
 # Training
-res = experiment(10000, 10000000, render=False)
+# res = experiment(10000, 10000000, render=False)
 # res["agent"].save_model("model10000eps")
 
 # Testing
-#res = experiment(20, 10000000, render=True, default_policy=True, policy="SavedNetworks/net")
+res = experiment(20, 10000000, render=True, default_policy=True, policy="SavedNetworks/net")

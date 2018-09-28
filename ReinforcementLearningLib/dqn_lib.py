@@ -22,8 +22,7 @@ class DQNAgent:
 
     def __init__(self, input_size, output_size, layers, memory_size=3000, batch_size=32,
                  use_ddqn=False, default_policy=False, model_filename=None, tb_dir="tb_log",
-                 epsilon=1, epsilon_lower_bound=0.1,
-                 epsilon_decay_function=lambda e: (epsilon - epsilon_lower_bound) / 1000000,
+                 epsilon=1, epsilon_lower_bound=0.1, epsilon_decay_function=lambda e: e - (0.9 / 1000000),
                  gamma=0.95, optimizer=RMSprop(0.00025), learn_thresh=50000,
                  update_rate=10000):
         self.input_size = input_size
