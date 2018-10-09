@@ -20,12 +20,11 @@ def huber_loss(a, b, in_keras=True):
 
 class DQNAgent:
 
-    def __init__(self, input_size, output_size, layers, memory_size=3000, batch_size=32,
+    def __init__(self, output_size, layers, memory_size=3000, batch_size=32,
                  use_ddqn=False, default_policy=False, model_filename=None, tb_dir="tb_log",
                  epsilon=1, epsilon_lower_bound=0.1, epsilon_decay_function=lambda e: e - (0.9 / 1000000),
                  gamma=0.95, optimizer=RMSprop(0.00025), learn_thresh=50000,
                  update_rate=10000):
-        self.input_size = input_size
         self.output_size = output_size
         self.memory_size = memory_size
         self.memory = deque(maxlen=memory_size)
@@ -88,7 +87,8 @@ class DQNAgent:
         else:
             for state, next_action, reward, new_state, end in pick:
                 if not end:
-                    reward = reward + self.gamma * np.amax(self.target_model.predict(new_state)[0])
+                    action = np.argmax(self.evaluate_model.predict(new_state)[0])
+                    reward = reward + self.gamma * self.target_model.predict(new_state)[0][action]
 
                 new_prediction = self.target_model.predict(state)
                 new_prediction[0][next_action] = reward
