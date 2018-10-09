@@ -17,12 +17,13 @@ def accuracy(results):
     return results[1] / (results[0] + results[1]) * 100
 
 
-def experiment(n_episodes, default_policy=False, policy=None, render=False):
+def experiment(n_episodes, default_policy=False, policy=None, render = False):
     res = [0, 0] # array of results accumulator: {[0]: Loss, [1]: Victory}
     scores = [] # Cumulative rewards
     steps = [] # Steps per episode
     
-    env = gym.make('MountainCar-v0')
+    env = gym.make('CartPole-v0')
+    env = env.unwrapped
     env.seed(91)
 
     input_dim = env.observation_space.shape[0]
@@ -40,7 +41,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
         state = env.reset()
         cumulative_reward = 0
 
-        state = np.reshape(state, [1, 2])
+        state = np.reshape(state, [1, 4])
         
         #for t in tqdm(range(env._max_episode_steps), desc="Action", leave=False):
         for t in range(env._max_episode_steps):
@@ -50,8 +51,11 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
             next_action = agent.act(state)                       
             new_state, reward, end, _ = env.step(next_action)
 
-            reward = abs(new_state[0] - (-0.5)) # r in [0, 1]
-            new_state = np.reshape(new_state, [1, 2])
+            x, x_dot, theta, thetadot = new_state
+            r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
+            r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
+            reward = r1 + r2
+            new_state = np.reshape(new_state, [1, 4])
             
             agent.memoise((state, next_action, reward, new_state, end))
 
@@ -73,14 +77,11 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
         cumulative_reward += reward
         scores.append(cumulative_reward)
     env.close()
-    return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
-
-
+    return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent }
+    
 # Training
-res = experiment(120)
+res = experiment(10000)
 res["agent"].save_model("model1")
-
-#np.savetxt("scores/dqn_mountain_car.csv", res["scores"], delimiter=',')
 
 # Testing
 res2 = experiment(100, default_policy=True, policy="model1")

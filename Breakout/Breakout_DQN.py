@@ -81,7 +81,6 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                         stack = new_stack
                         if (render):
                             env.render()
-                            time.sleep(0.05)
 
                     has_lost_life = False
 
@@ -89,7 +88,6 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                 new_state, reward, end, info = env.step(next_action)
                 if (render):
                     env.render()
-                    time.sleep(0.05)
                 reward = np.clip(reward, -1., 1.)
 
                 cumulative_reward += reward
@@ -130,4 +128,4 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
 # res["agent"].save_model("model10000eps")
 
 # Testing
-res = experiment(20, 10000000, render=True, default_policy=True, policy="SavedNetworks/partial_model_breakout")
+res = experiment(20, 10000000, render=True, default_policy=True, policy="SavedNetworks/partial_model_breakout500")
