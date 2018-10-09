@@ -33,9 +33,10 @@ class DQNAgent:
         # Tensorboard parameters
         self.tb_step = 0
         self.tb_gather = 500
-        self.tensorboard = TensorBoard(log_dir='./Monitoring/%s' % tb_dir,
-                                       histogram_freq=0, write_graph=False)
-        print("Tensorboard Loaded! (log_dir: %s)" % self.tensorboard.log_dir)
+        self.tb_dir = tb_dir
+        if tb_dir is not None:
+            self.tensorboard = TensorBoard(log_dir='./Monitoring/%s' % tb_dir, write_graph=False)
+            print("Tensorboard Loaded! (log_dir: %s)" % self.tensorboard.log_dir)
         # Exploration/Exploitation parameters
         self.epsilon = epsilon
         self.epsilon_decay_function = epsilon_decay_function
@@ -71,21 +72,14 @@ class DQNAgent:
 
     def replay(self):
         pick = self.random_pick()
-        if self.use_ddqn == False:
-            for state, next_action, reward, new_state, end in pick:
+        for state, next_action, reward, new_state, end in pick:
+            if self.use_ddqn == False:
                 if not end:
                     reward = reward + self.gamma * np.amax(self.evaluate_model.predict(new_state)[0])
 
                 new_prediction = self.evaluate_model.predict(state)
                 new_prediction[0][next_action] = reward
-
-                if (self.tb_step % self.tb_gather) == 0:
-                    self.evaluate_model.fit(state, new_prediction, verbose=0, callbacks=[self.tensorboard])
-                else:
-                    self.evaluate_model.fit(state, new_prediction, verbose=0)
-                self.tb_step += 1
-        else:
-            for state, next_action, reward, new_state, end in pick:
+            else:
                 if not end:
                     action = np.argmax(self.evaluate_model.predict(new_state)[0])
                     reward = reward + self.gamma * self.target_model.predict(new_state)[0][action]
@@ -93,11 +87,11 @@ class DQNAgent:
                 new_prediction = self.target_model.predict(state)
                 new_prediction[0][next_action] = reward
 
-                if (self.tb_step % self.tb_gather) == 0:
-                    self.evaluate_model.fit(state, new_prediction, verbose=0, callbacks=[self.tensorboard])
-                else:
-                    self.evaluate_model.fit(state, new_prediction, verbose=0)
-                self.tb_step += 1
+            if (self.tb_step % self.tb_gather) == 0 and self.tb_dir is not None:
+                self.evaluate_model.fit(state, new_prediction, verbose=0, callbacks=[self.tensorboard])
+            else:
+                self.evaluate_model.fit(state, new_prediction, verbose=0)
+            self.tb_step += 1
 
     def random_pick(self):
         return ran.sample(self.memory, self.batch_size)
@@ -126,7 +120,7 @@ class DQNAgent:
             (self.total_steps % self.update_rate) == 0 and not self.default_policy and
             self.use_ddqn == True):
             self.update_target_model()
-            print("model updated")
+            # print("model updated")
         if self.total_steps > self.learn_thresh and not self.default_policy:   
             self.replay()
 
