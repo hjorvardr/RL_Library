@@ -5,6 +5,7 @@ import gym
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
+from keras.initializers import VarianceScaling
 from keras.layers import Dense, Flatten
 from keras.layers.convolutional import Conv2D
 from skimage.color import rgb2gray
@@ -43,17 +44,17 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
         input_dim = env.observation_space.shape[0]
         output_dim = env.action_space.n
 
-        layers = [Conv2D(32, (8, 8), strides=(4, 4), activation='relu', input_shape=(84, 84, 4)),
-                  Conv2D(64, (4, 4), strides=(2, 2), activation='relu'),
-                  Conv2D(64, (3, 3), strides=(1, 1), activation='relu'),
+        layers = [Conv2D(32, (8, 8), strides=(4, 4), activation='relu', input_shape=(84, 84, 4), kernel_initializer=VarianceScaling(scale=2.0)),
+                  Conv2D(64, (4, 4), strides=(2, 2), activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
+                  Conv2D(64, (3, 3), strides=(1, 1), activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
                   Flatten(),
-                  Dense(512, activation='relu'),
+                  Dense(512, activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
                   Dense(output_dim)]
             
         if default_policy:
             agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0.05, epsilon_lower_bound=0.05)
         else:
-            agent = DQNAgent(output_dim, layers, use_ddqn=True, memory_size=400000, gamma=0.99)
+            agent = DQNAgent(output_dim, layers, use_ddqn=True, memory_size=720000, gamma=0.99)
 
         gathered_frame = 0
         for episode_number in tqdm(range(n_episodes), desc="Episode"):
@@ -72,12 +73,12 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                     stack = np.stack((empty_state, empty_state, empty_state, empty_state), axis=2)
                     stack = np.reshape([stack], (1, 84, 84, 4))
 
-                    for _ in range(ran.randint(1, 30)):
+                    for _ in range(ran.randint(1, 10)):
                         gathered_frame += 1
                         frame, reward,end,_ = env.step(next_action)
                         new_state = np.reshape(pre_processing(frame), (1, 84, 84, 1))
                         new_stack = np.append(new_state, stack[:, :, :, :3], axis=3)
-                        agent.memoise((stack, next_action, reward, new_stack, end))
+                        agent.memoise((stack, next_action, reward, new_state, end))
                         stack = new_stack
                         if (render):
                             env.render()
@@ -89,19 +90,19 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                 if (render):
                     env.render()
                 reward = np.clip(reward, -1., 1.)
+                if info['ale.lives'] < start_life:
+                    has_lost_life = True
+                    start_life = info['ale.lives']
+                    res[0] += 1
 
                 cumulative_reward += reward
 
                 new_state = np.reshape(pre_processing(new_state), (1, 84, 84, 1))
                 new_stack = np.append(new_state, stack[:, :, :, :3], axis=3)
-                agent.memoise((stack, next_action, reward, new_stack, end))
+                agent.memoise((stack, next_action, reward, new_state, has_lost_life))
 
                 stack = new_stack
                 gathered_frame += 1
-                if info['ale.lives'] < start_life:
-                    has_lost_life = True
-                    start_life = info['ale.lives']
-                    res[0] += 1
 
                 if end:
                     if not has_lost_life:
@@ -116,7 +117,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                 t += 1
 
             scores.append(cumulative_reward)
-            if episode_number > 300 and episode_number % 50 == 0:
+            if episode_number >= 100 and episode_number % 50 == 0:
                 agent.save_model("partial_model_breakout")
 
         

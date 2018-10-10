@@ -1,11 +1,11 @@
 import random as ran
-from collections import deque
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
 from keras.models import Sequential, load_model
 from keras.optimizers import RMSprop, Adam
 from keras.callbacks import TensorBoard
+from ring_buffer import RingBuffer
 
 
 def huber_loss(a, b, in_keras=True):
@@ -26,8 +26,7 @@ class DQNAgent:
                  gamma=0.95, optimizer=RMSprop(0.00025), learn_thresh=50000,
                  update_rate=10000):
         self.output_size = output_size
-        self.memory_size = memory_size
-        self.memory = deque(maxlen=memory_size)
+        self.memory = RingBuffer(memory_size)
         self.use_ddqn = use_ddqn
         self.default_policy = default_policy
         # Tensorboard parameters
@@ -72,7 +71,9 @@ class DQNAgent:
 
     def replay(self):
         pick = self.random_pick()
-        for state, next_action, reward, new_state, end in pick:
+        # for state, next_action, reward, new_state, end in pick:
+        for state, next_action, reward, frame, end in pick:
+            new_state = np.append(frame, state[:, :, :, :3], axis=3) # TODO: generalisation
             if self.use_ddqn == False:
                 if not end:
                     reward = reward + self.gamma * np.amax(self.evaluate_model.predict(new_state)[0])
@@ -94,7 +95,7 @@ class DQNAgent:
             self.tb_step += 1
 
     def random_pick(self):
-        return ran.sample(self.memory, self.batch_size)
+        return self.memory.random_pick(self.batch_size)
 
     def act(self, state):
         if np.random.uniform() > self.epsilon:
