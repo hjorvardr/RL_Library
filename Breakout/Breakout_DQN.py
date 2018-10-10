@@ -124,8 +124,8 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
         return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
     
 # Training
-# res = experiment(10000, 10000000, render=False)
-# res["agent"].save_model("model10000eps")
+res = experiment(10000, 10000000, render=False)
+res["agent"].save_model("model10000eps")
 
 # Testing
-res = experiment(20, 10000000, render=True, default_policy=True, policy="SavedNetworks/partial_model_breakout500")
+#res = experiment(20, 10000000, render=True, default_policy=True, policy="SavedNetworks/partial_model_breakout500")
