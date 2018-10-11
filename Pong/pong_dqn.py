@@ -42,58 +42,54 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
                   Dense(output_dim)]
             
         if default_policy:
-            agent = DQNAgent(input_dim, output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0.05, epsilon_lower_bound=0.05)
+            agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0.05, epsilon_lower_bound=0.05)
         else:
-            agent = DQNAgent(input_dim, output_dim, layers, use_ddqn=True, memory_size=100000, gamma=0.99, learn_thresh=10000,
-                            epsilon_lower_bound=0.02, epsilon_decay_function=lambda e: e - (0.98 / 100000), update_rate=1000,
-                            optimizer=Adam(0.0001))
+            agent = DQNAgent(output_dim, layers, use_ddqn=True, memory_size=200000, gamma=0.99, learn_thresh=50000,
+                            epsilon_lower_bound=0.02, epsilon_decay_function=lambda e: e - (0.98 / 100000), update_rate=10000,
+                            optimizer=Adam(0.00025))
 
         gathered_frame = 0
         for episode_number in tqdm(range(n_episodes), desc="Episode"):
             frame = env.reset()
-            cumulative_reward = 0
-            
             state = pre_processing(frame)
-            empty_state = np.zeros(state.shape)
-            stack = np.stack((empty_state, empty_state, empty_state, empty_state), axis=2)
-            stack = np.reshape([stack], (1, 84, 84, 4))
+            empty_state = np.zeros(state.shape, dtype="uint8")
+            cumulative_reward = 0
 
-            next_action = [1, 4, 5][ran.randint(0, 2)]
-            frame,reward,end,_ = env.step(next_action)
-            if (render):
-                env.render()
-                # time.sleep(0.05)
-
-            new_state = np.reshape(pre_processing(frame), (1, 84, 84, 1))
-            new_stack = np.append(new_state, stack[:, :, :, :3], axis=3)
-            agent.memoise((stack, next_action, reward, new_stack, end))
-
-            t = 0
-            for _ in range(ran.randint(1, 30)):
-                next_action = 0
-                gathered_frame += 1
-                frame, reward, end, _ = env.step(next_action)
-                new_state = np.reshape(pre_processing(frame), (1, 84, 84, 1))
-                new_stack = np.append(new_state, stack[:, :, :, :3], axis=3)
-                agent.memoise((stack, next_action, reward, new_stack, end))
-                stack = new_stack
-                if (render):
-                    env.render()
-                    # time.sleep(0.05)
+            has_lost_life = True
             
+            t = 0
             while True:
+                if has_lost_life:
+                    next_action = [1, 4, 5][ran.randint(0, 2)]
+
+                    stack = np.stack((empty_state, empty_state, empty_state, empty_state), axis=2)
+                    stack = np.reshape([stack], (1, 84, 84, 4))
+
+                    for _ in range(ran.randint(1, 10)):
+                        gathered_frame += 1
+                        frame, reward,end,_ = env.step(next_action)
+                        new_state = np.reshape(pre_processing(frame), (1, 84, 84, 1))
+                        new_stack = np.append(new_state, stack[:, :, :, :3], axis=3)
+                        stack = new_stack
+                        if (render):
+                            env.render()
+
+                    has_lost_life = False
+
                 next_action = agent.act(stack)
                 new_state, reward, end, _ = env.step(next_action)
                 if (render):
                     env.render()
                     # time.sleep(0.05)
                 reward = np.clip(reward, -1., 1.)
+                if reward != 0:
+                    has_lost_life = True
 
                 cumulative_reward += reward
 
                 new_state = np.reshape(pre_processing(new_state), (1, 84, 84, 1))
                 new_stack = np.append(new_state, stack[:, :, :, :3], axis=3)
-                agent.memoise((stack, next_action, reward, new_stack, end))
+                agent.memoise((stack, next_action, reward, new_state, has_lost_life))
 
                 stack = new_stack
                 gathered_frame += 1
@@ -112,16 +108,17 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
                 t += 1
 
             scores.append(cumulative_reward)
-            if episode_number > 0 and episode_number % 10 == 0:
-                agent.save_model("partial_model_pong")
+            if episode_number >= 50 and episode_number % 10 == 0:
+                model_name = "partial_model_pong" + str(episode_number)
+                agent.save_model(model_name)
 
         
         env.close()
         return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
     
 # Training
-res = experiment(500, render=False)
+res = experiment(1000, render=False)
 res["agent"].save_model("model500eps")
 
 # Testing
-res = experiment(20, render=True, default_policy=True, policy="SavedNetworks/partial_model_pong")
+# res = experiment(20, render=True, default_policy=True, policy="SavedNetworks/partial_model_pong")
