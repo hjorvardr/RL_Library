@@ -124,5 +124,5 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
 #res["agent"].save_model("model500eps")
 
 # Testing
-res = experiment(20, render=True, default_policy=True, policy="partial_model_pong160")
+res = experiment(20, render=True, default_policy=True, policy="partial_model_pong300")
 

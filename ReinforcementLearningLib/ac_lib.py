@@ -8,7 +8,6 @@ from keras.optimizers import RMSprop, Adam
 from keras.callbacks import TensorBoard
 from keras.layers import Dense, Dropout, Input
 from keras.layers.merge import Add, Multiply
-from ring_buffer import RingBuffer
 
 
 class ACAgent:
@@ -28,7 +27,7 @@ class ACAgent:
             prediction = self.model.predict(state)
             log_prob = np.log(prediction[0][action])
 
-            new_prediction = log_prob * td_error
+            target = log_prob * td_error
 
             new_prediction = self.model.predict(state)
             new_prediction[0][action] = -target
@@ -38,6 +37,7 @@ class ACAgent:
     class Critic:
         def __init__(self, layers):
             self.optimizer = Adam(lr=0.01)
+            self.gamma = 0.99
             self.model = Sequential()
             for l in layers:
                 self.model.add(l)
@@ -59,7 +59,7 @@ class ACAgent:
             return td_error
 
     def __init__(self, output_shape, actor_layers, critic_layers, default_policy=False, model_filename=None,
-                tb_dir="tb_log", epsilon=1, epsilon_lower_bound=0.1, epsilon_decay_function=lambda e: e - (0.9 / 1000000),
+                tb_dir="tb_log", epsilon=1, epsilon_lower_bound=0.1, epsilon_decay_function=lambda e: e - (0.9 / 950000),
                  gamma=0.95, learn_thresh=50000, update_rate=10000):
         self.output_shape = output_shape
         self.default_policy = default_policy
@@ -86,6 +86,21 @@ class ACAgent:
         # Model init
         self.actor_model = self.Actor(actor_layers)
         self.critic_model = self.Critic(critic_layers)
+
+    def act(self, state):
+        if np.random.uniform() > self.epsilon:
+            prediction = self.actor_model.model.predict(state)
+            next_action = np.argmax(prediction[0])
+        else:
+            next_action = np.argmax(np.random.uniform(0, 1, size=self.output_shape))
+
+        if self.total_steps > self.learn_thresh:
+            self.epsilon = self.epsilon_decay_function(self.epsilon)
+            self.epsilon = np.amax([self.epsilon, self.epsilon_lower_bound])
+
+        self.total_steps += 1
+
+        return next_action
 
     def learn(self, state, action, new_state, reward, end):
         if self.total_steps > self.learn_thresh:
