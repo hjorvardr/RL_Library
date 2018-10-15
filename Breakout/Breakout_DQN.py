@@ -34,7 +34,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
         scores = [] # Cumulative rewards
         steps = [] # Steps per episode
         
-        env = gym.make('BreakoutNoFrameskip-v4')
+        env = gym.make('BreakoutDeterministic-v4')
 
         # if default_policy:
         #     env._max_episode_steps = 5000000
@@ -118,15 +118,16 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
 
             scores.append(cumulative_reward)
             if episode_number >= 100 and episode_number % 50 == 0:
-                agent.save_model("partial_model_breakout")
+                model_name = "partial_model_breakout" + str(episode_number)
+                agent.save_model(model_name)
 
         
         env.close()
         return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
     
 # Training
-res = experiment(10000, 10000000, render=False)
-res["agent"].save_model("model10000eps")
+#res = experiment(100000, 10000000, render=False)
+#res["agent"].save_model("final_model")
 
 # Testing
-#res = experiment(20, 10000000, render=True, default_policy=True, policy="SavedNetworks/partial_model_breakout500")
+res = experiment(20, 10000000, render=True, default_policy=True, policy="partial_model_breakout12250")

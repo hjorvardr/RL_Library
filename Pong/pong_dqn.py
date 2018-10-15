@@ -12,6 +12,7 @@ from skimage.color import rgb2gray
 from skimage.transform import resize
 from tqdm import tqdm
 from dqn_lib import DQNAgent
+from ring_buffer import RingBuffer
 
 
 # Original size: 210x160x3
@@ -28,8 +29,8 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
         res = [0,0] # array of results accumulator: {[0]: Loss, [1]: Victory}
         scores = [] # Cumulative rewards
         steps = [] # Steps per episode
-        
-        env = gym.make('PongNoFrameskip-v4')
+        reward_list = RingBuffer(100)
+        env = gym.make('PongDeterministic-v4')
 
         input_dim = env.observation_space.shape[0]
         output_dim = env.action_space.n
@@ -44,8 +45,8 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
         if default_policy:
             agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0.05, epsilon_lower_bound=0.05)
         else:
-            agent = DQNAgent(output_dim, layers, use_ddqn=True, memory_size=200000, gamma=0.99, learn_thresh=50000,
-                            epsilon_lower_bound=0.02, epsilon_decay_function=lambda e: e - (0.98 / 100000), update_rate=10000,
+            agent = DQNAgent(output_dim, layers, use_ddqn=True, memory_size=700000, gamma=0.99, learn_thresh=50000,
+                            epsilon_lower_bound=0.02, epsilon_decay_function=lambda e: e - (0.98 / 950000), update_rate=10000,
                             optimizer=Adam(0.00025))
 
         gathered_frame = 0
@@ -54,7 +55,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
             state = pre_processing(frame)
             empty_state = np.zeros(state.shape, dtype="uint8")
             cumulative_reward = 0
-
+            
             has_lost_life = True
             
             t = 0
@@ -80,7 +81,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
                 new_state, reward, end, _ = env.step(next_action)
                 if (render):
                     env.render()
-                    # time.sleep(0.05)
+                    time.sleep(0.02)
                 reward = np.clip(reward, -1., 1.)
                 if reward != 0:
                     has_lost_life = True
@@ -95,13 +96,15 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
                 gathered_frame += 1
 
                 if end:
+                    reward_list.append(cumulative_reward)
                     if cumulative_reward > 0:
                         res[1] += 1
-                        print("You Won!, steps:", t, "reward:", cumulative_reward, "frames:", gathered_frame)
+                        print("You Won!, steps:", t, "reward:", reward_list.mean(), "frames:", gathered_frame)
                     else:
                         res[0] += 1
-                        print("You Lost!, steps:", t, "reward:", cumulative_reward, "frames:", gathered_frame)
+                        print("You Lost!, steps:", t, "reward:", reward_list.mean(), "frames:", gathered_frame)
                     steps.append(t)
+                    
                     break
                 
                 agent.learn()
@@ -117,8 +120,9 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
         return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
     
 # Training
-res = experiment(1000, render=False)
-res["agent"].save_model("model500eps")
+#res = experiment(10000, render=False)
+#res["agent"].save_model("model500eps")
 
 # Testing
-# res = experiment(20, render=True, default_policy=True, policy="SavedNetworks/partial_model_pong")
+res = experiment(20, render=True, default_policy=True, policy="partial_model_pong160")
+

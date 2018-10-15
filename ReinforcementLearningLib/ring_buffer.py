@@ -19,3 +19,9 @@ class RingBuffer:
 			rand_index = randint(0, min(self.stored_elements, self.max_buffer_size) - 1)
 			picks.append(self.buffer[rand_index])
 		return picks
+
+	def mean(self):
+		acc = 0
+		for i in range(min(self.stored_elements, 100)):
+			acc += self.buffer[i]
+		return acc/self.stored_elements

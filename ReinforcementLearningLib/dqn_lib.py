@@ -122,7 +122,7 @@ class DQNAgent:
             self.use_ddqn == True):
             self.update_target_model()
             # print("model updated")
-        if self.total_steps > self.learn_thresh and not self.default_policy:   
+        if self.total_steps > self.learn_thresh and not self.default_policy and self.total_steps % 4 == 0:   
             self.replay()
 
     def save_model(self, filename):
@@ -130,3 +130,4 @@ class DQNAgent:
     
     def load_model(self, filename):
         return load_model('%s.h5' % filename, custom_objects={ 'huber_loss': huber_loss })
+
