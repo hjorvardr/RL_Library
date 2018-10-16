@@ -73,6 +73,8 @@ class DQNAgent:
         pick = self.random_pick()
         # for state, next_action, reward, new_state, end in pick:
         for state, next_action, reward, frame, end in pick:
+            state = np.float32(state / 255) # TODO: generalisation
+            frame = np.float32(frame / 255) # TODO: generalisation
             new_state = np.append(frame, state[:, :, :, :3], axis=3) # TODO: generalisation
             if self.use_ddqn == False:
                 if not end:
@@ -99,6 +101,7 @@ class DQNAgent:
 
     def act(self, state):
         if np.random.uniform() > self.epsilon:
+            state = np.float32(state / 255) # TODO: generalisation
             prediction = self.evaluate_model.predict(state)
             next_action = np.argmax(prediction[0])
         else:

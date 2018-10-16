@@ -5,6 +5,7 @@ import gym
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
+from keras.initializers import VarianceScaling
 from keras.layers import Dense, Flatten
 from keras.layers.convolutional import Conv2D
 from keras.optimizers import Adam
@@ -35,9 +36,9 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
         input_dim = env.observation_space.shape[0]
         output_dim = env.action_space.n
 
-        layers = [Conv2D(32, (8, 8), strides=(4, 4), activation='relu', input_shape=(84, 84, 4)),
-                  Conv2D(64, (4, 4), strides=(2, 2), activation='relu'),
-                  Conv2D(64, (3, 3), strides=(1, 1), activation='relu'),
+        layers = [Conv2D(32, (8, 8), strides=(4, 4), activation='relu', input_shape=(84, 84, 4), kernel_initializer=VarianceScaling(scale=2.0)),
+                  Conv2D(64, (4, 4), strides=(2, 2), activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
+                  Conv2D(64, (3, 3), strides=(1, 1), activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
                   Flatten(),
                   Dense(512, activation='relu'),
                   Dense(output_dim)]
@@ -61,7 +62,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
             t = 0
             while True:
                 if has_lost_life:
-                    next_action = [1, 4, 5][ran.randint(0, 2)]
+                    next_action = 1 # [1, 4, 5][ran.randint(0, 2)]
 
                     stack = np.stack((empty_state, empty_state, empty_state, empty_state), axis=2)
                     stack = np.reshape([stack], (1, 84, 84, 4))
@@ -120,9 +121,9 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
         return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
     
 # Training
-#res = experiment(10000, render=False)
-#res["agent"].save_model("model500eps")
+res = experiment(10000, render=False)
+res["agent"].save_model("finalmodel")
 
 # Testing
-res = experiment(20, render=True, default_policy=True, policy="partial_model_pong300")
+# res = experiment(20, render=True, default_policy=True, policy="partial_model_pong300")
 
