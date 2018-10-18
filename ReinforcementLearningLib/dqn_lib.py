@@ -71,11 +71,11 @@ class DQNAgent:
 
     def replay(self):
         pick = self.random_pick()
-        # for state, next_action, reward, new_state, end in pick:
-        for state, next_action, reward, frame, end in pick:
-            state = np.float32(state / 255) # TODO: generalisation
-            frame = np.float32(frame / 255) # TODO: generalisation
-            new_state = np.append(frame, state[:, :, :, :3], axis=3) # TODO: generalisation
+        for state, next_action, reward, new_state, end in pick:
+        # for state, next_action, reward, frame, end in pick:
+            # state = np.float32(state / 255) # TODO: generalisation
+            # frame = np.float32(frame / 255) # TODO: generalisation
+            # new_state = np.append(frame, state[:, :, :, :3], axis=3) # TODO: generalisation
             if self.use_ddqn == False:
                 if not end:
                     reward = reward + self.gamma * np.amax(self.evaluate_model.predict(new_state)[0])
@@ -101,7 +101,7 @@ class DQNAgent:
 
     def act(self, state):
         if np.random.uniform() > self.epsilon:
-            state = np.float32(state / 255) # TODO: generalisation
+            # state = np.float32(state / 255) # TODO: generalisation
             prediction = self.evaluate_model.predict(state)
             next_action = np.argmax(prediction[0])
         else:
@@ -124,7 +124,7 @@ class DQNAgent:
             (self.total_steps % self.update_rate) == 0 and not self.default_policy and
             self.use_ddqn == True):
             self.update_target_model()
-            # print("model updated")
+            print("model updated, epsilon:", self.epsilon)
         if self.total_steps > self.learn_thresh and not self.default_policy and self.total_steps % 4 == 0:   
             self.replay()
 
