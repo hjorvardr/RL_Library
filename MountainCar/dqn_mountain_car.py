@@ -41,9 +41,18 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
         agent = agent_config
 
 
-    for _ in tqdm(range(n_episodes), desc="Episode"):
+    for i_episode in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
         cumulative_reward = 0
+
+        if (i_episode % 100) == 0 and not default_policy:
+            agent.save_model("tmp_model")
+            evaluation_result = experiment(500, default_policy=True, policy="tmp_model")
+            acc = accuracy(evaluation_result["res"])
+            if acc == 100:
+                break
+            else:
+                print("Accuracy:", acc, "Episode:", i_episode)
 
         state = np.reshape(state, [1, 2])
         
@@ -65,7 +74,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
                     res[0] += 1
                 else:
                     res[1] += 1
-                    print("ENTRATO!,", t, "steps")
+                    # print("ENTRATO!,", t, "steps")
 
                 steps.append(t)
                 break
@@ -102,16 +111,9 @@ experiments = []
 layer1 = Dense(15, input_dim=input_dim, activation='relu')
 layer2 = Dense(output_dim)
 layers = [layer1, layer2]
-experiments.append(("model01", 120, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))))
-experiments.append(("model02", 120, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=2000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))))
-experiments.append(("model03", 120, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=3000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))))
-experiments.append(("model04", 120, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=4000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))))
-experiments.append(("model05", 120, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=5000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))))
-experiments.append(("model06", 120, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=6000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))))
-experiments.append(("model07", 120, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=7000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))))
-experiments.append(("model08", 120, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=8000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))))
-experiments.append(("model09", 120, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=9000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))))
-experiments.append(("model10", 120, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=10000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))))
+experiments.append(("model20", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001))))
+experiments.append(("model21", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=2000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001))))
+experiments.append(("model22", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=3000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001))))
 
 
 
@@ -124,8 +126,8 @@ def train_and_test(experiments):
         training_mean_steps = train_res["steps"].mean()
         training_mean_score = train_res["scores"].mean()
         # Test
-        test_agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=model_name, epsilon=0, epsilon_lower_bound=0, learn_thresh=0)
-        test_res = experiment(100, default_policy=True, policy=model_name, agent_config=test_agent)
+        test_agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=model_name, epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
+        test_res = experiment(500, default_policy=True, policy=model_name, agent_config=test_agent)
         testing_accuracy = accuracy(test_res["results"])
         testing_mean_steps = test_res["steps"].mean()
         testing_mean_score = test_res["scores"].mean()
