@@ -12,64 +12,76 @@ from keras.layers.merge import Add, Multiply
 
 class ACAgent:
     class Actor:
-        def __init__(self, layers):
+        def __init__(self, layers, tb_dir, default_policy=None):
             self.loss = "mean_squared_error"
-            self.optimizer = Adam(lr=0.001)
-            self.model = Sequential()
-            for l in layers:
-                self.model.add(l)
-            self.model.compile(loss=self.loss, optimizer=self.optimizer)
+            self.optimizer = Adam(lr=0.0001)
+            # Tensorboard parameters
+            self.tb_dir = tb_dir
+            self.tb_step = 0
+            self.tb_gather = 500
+            if tb_dir is not None:
+                self.tensorboard_actor = TensorBoard(log_dir='./Monitoring/%s/actor' % tb_dir, write_graph=False)
+                print("Tensorboard Loaded! (log_dir: %s)" % self.tensorboard_actor.log_dir)
 
-            print("Actor model:")
-            self.model.summary()
+            if default_policy is None:
+                self.model = Sequential()
+                for l in layers:
+                    self.model.add(l)
+                self.model.compile(loss=self.loss, optimizer=self.optimizer)
+            else:
+                self.model = default_policy
+
 
         def learn(self, state, action, td_error):
-            prediction = self.model.predict(state)
-            log_prob = np.log(prediction[0][action])
-
-            target = log_prob * td_error
-
             new_prediction = self.model.predict(state)
-            new_prediction[0][action] = -target
-            self.model.fit(state, new_prediction, verbose=0)
+            new_prediction[0][action] = -td_error
+
+            if (self.tb_step % self.tb_gather) == 0 and self.tb_dir is not None:
+                self.model.fit(state, new_prediction, verbose=0, callbacks=[self.tensorboard_actor])
+            else:
+                self.model.fit(state, new_prediction, verbose=0)
+            self.tb_step += 1
 
 
     class Critic:
-        def __init__(self, layers):
-            self.optimizer = Adam(lr=0.01)
-            self.gamma = 0.99
-            self.model = Sequential()
-            for l in layers:
-                self.model.add(l)
-            self.model.compile(loss=self.loss, optimizer=self.optimizer)
+        def __init__(self, layers, tb_dir, default_policy=None):
+            self.optimizer = Adam(lr=0.001)
+            self.gamma = 0.9
+            self.tb_dir = tb_dir
+            # Tensorboard parameters
+            self.tb_step = 0
+            self.tb_gather = 500
 
-            print("Critic model:")
-            self.model.summary()
+            if tb_dir is not None:
+                self.tensorboard_critic = TensorBoard(log_dir='./Monitoring/%s/critic' % tb_dir, write_graph=False)
+                print("Tensorboard Loaded! (log_dir: %s)" % self.tensorboard_critic.log_dir)
 
-
-        def loss(self, curr_value, pred_value):
-            return np.square(pred_value)
+            if default_policy is None:
+                self.model = Sequential()
+                for l in layers:
+                    self.model.add(l)
+                self.model.compile(loss='mean_squared_error', optimizer=self.optimizer)
+            else:
+                self.model = default_policy
 
         
         def learn(self, state, new_state, reward):
             td_error = reward + self.gamma * self.model.predict(new_state)[0] - self.model.predict(state)[0]
 
-            self.model.fit(state, td_error, verbose=0)
+
+            if (self.tb_step % self.tb_gather) == 0 and self.tb_dir is not None:
+                self.model.fit(state, td_error, verbose=0, callbacks=[self.tensorboard_critic])
+            else:
+                self.model.fit(state, td_error, verbose=0)
+            self.tb_step += 1
 
             return td_error
 
     def __init__(self, output_shape, actor_layers, critic_layers, default_policy=False, model_filename=None,
                 tb_dir="tb_log", epsilon=1, epsilon_lower_bound=0.1, epsilon_decay_function=lambda e: e - (0.9 / 950000),
-                 gamma=0.95, learn_thresh=50000, update_rate=10000):
+                gamma=0.95):
         self.output_shape = output_shape
         self.default_policy = default_policy
-
-        # Tensorboard parameters
-        self.tb_step = 0
-        self.tb_gather = 500
-        if tb_dir is not None:
-            self.tensorboard = TensorBoard(log_dir='./Monitoring/%s' % tb_dir, write_graph=False)
-            print("Tensorboard Loaded! (log_dir: %s)" % self.tensorboard.log_dir)
 
         # Exploration/Exploitation parameters
         self.epsilon = epsilon
@@ -77,15 +89,17 @@ class ACAgent:
         self.epsilon_lower_bound = epsilon_lower_bound
 
         # Learning parameters
-        self.total_steps = 0
         self.gamma = gamma
         self.loss = 'mean_squared_error'
-        self.learn_thresh = learn_thresh # Number of steps from which the network starts learning
-        self.update_rate = update_rate
 
         # Model init
-        self.actor_model = self.Actor(actor_layers)
-        self.critic_model = self.Critic(critic_layers)
+        if not default_policy:
+            self.actor_model = self.Actor(actor_layers, tb_dir)
+            self.critic_model = self.Critic(critic_layers, tb_dir)
+        else:
+            self.actor_net, self.critic_net = self.load_model(model_filename)
+            self.actor_model = self.Actor(None, tb_dir, self.actor_net)
+            self.critic_model = self.Critic(None, tb_dir, self.critic_net)
 
     def act(self, state):
         if np.random.uniform() > self.epsilon:
@@ -94,16 +108,19 @@ class ACAgent:
         else:
             next_action = np.argmax(np.random.uniform(0, 1, size=self.output_shape))
 
-        if self.total_steps > self.learn_thresh:
-            self.epsilon = self.epsilon_decay_function(self.epsilon)
-            self.epsilon = np.amax([self.epsilon, self.epsilon_lower_bound])
-
-        self.total_steps += 1
+        self.epsilon = self.epsilon_decay_function(self.epsilon)
+        self.epsilon = np.amax([self.epsilon, self.epsilon_lower_bound])
 
         return next_action
 
     def learn(self, state, action, new_state, reward, end):
-        if self.total_steps > self.learn_thresh:
+        if not self.default_policy:
             td_error = self.critic_model.learn(state, new_state, reward)
             self.actor_model.learn(state, action, td_error)
     
+    def save_model(self, filename):
+        self.actor_model.model.save('%s-actor.h5' % filename)
+        self.critic_model.model.save('%s-critic.h5' % filename)
+
+    def load_model(self, filename):
+        return load_model('%s-actor.h5' % filename), load_model('%s-critic.h5' % filename)
