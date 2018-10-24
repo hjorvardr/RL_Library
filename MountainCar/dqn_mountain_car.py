@@ -10,6 +10,9 @@ from keras.layers import Dense, Dropout
 from tqdm import tqdm
 from dqn_lib import DQNAgent
 
+os.environ['PYTHONHASHSEED'] = '0'
+np.random.seed(17)
+tf.set_random_seed(17)
 
 def accuracy(results):
     """
@@ -24,7 +27,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
     steps = [] # Steps per episode
     
     env = gym.make('MountainCar-v0')
-    env.seed(91)
+    env.seed(17)
 
     input_dim = env.observation_space.shape[0]
     output_dim = env.action_space.n
@@ -45,8 +48,8 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
         cumulative_reward = 0
 
         if i_episode > 0 and (i_episode % 100) == 0 and not default_policy:
-            agent.save_model("tmp_model")
-            evaluation_result = experiment(500, default_policy=True, policy="tmp_model")
+            agent.save_model("17-tmp_model")
+            evaluation_result = experiment(500, default_policy=True, policy="17-tmp_model")
             acc = accuracy(evaluation_result["results"])
             if acc == 100:
                 break
@@ -73,7 +76,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
                     res[0] += 1
                 else:
                     res[1] += 1
-                    # print("ENTRATO!,", t, "steps")
+                    print("ENTRATO!,", t, "steps")
 
                 steps.append(t)
                 break
@@ -141,7 +144,7 @@ layers = [layer1, layer2]
 # experiments.append(("model29", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=70000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model30", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=8000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model31", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=9000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
-# experiments.append(("model32", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=10000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
+experiments.append(("17-model32", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=10000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # layer1 = Dense(10, input_dim=input_dim, activation='relu')
 # layer2 = Dense(output_dim)
 # layers = [layer1, layer2]
@@ -188,7 +191,7 @@ def train_and_test(experiments):
 
         df.loc[len(df)] = [model_name, len(train_res["steps"]), training_mean_score, training_mean_steps, testing_accuracy, testing_mean_score, testing_mean_steps]
 
-    df.to_csv('experiments.csv')
+    df.to_csv('17-experiments.csv')
 
 def main():
     train_and_test(experiments)
