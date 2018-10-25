@@ -38,15 +38,15 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
     # agent5 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="model33", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
     agent6 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="luigi1", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
     agent7 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="luigi2", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
-    agent8 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="modelprob1", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
-    agent9 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="modelprob2", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
+    # agent8 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="modelprob1", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
+    # agent9 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="modelprob2", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
     
-    agents = [agent6, agent3, agent2, agent2, agent1, agent7]
-    agents = [agent9]
+    agents = [agent1, agent6, agent7, agent3]
+    # agents = [agent9]
 
-    agent = EnsemblerAgent(output_dim, agents, EnsemblerType.MAJOR_VOTING_BASED)
+    # agent = EnsemblerAgent(output_dim, agents, EnsemblerType.MAJOR_VOTING_BASED)
     #agent = EnsemblerAgent(output_dim, agents, EnsemblerType.AGGREGATION_BASED)
-    #agent = EnsemblerAgent(output_dim, agents, EnsemblerType.TRUST_BASED)
+    agent = EnsemblerAgent(output_dim, agents, EnsemblerType.TRUST_BASED)
     
     # agent = EnsemblerAgent(output_dim, agents, 0)
     
@@ -69,10 +69,10 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
             
             if end:
                 if t == env._max_episode_steps - 1:
-                    agent.trust_update(end, 0)
+                    agent.trust_update(False)
                     res[0] += 1
                 else:
-                    agent.trust_update(end, 1)
+                    agent.trust_update(True)
                     res[1] += 1
                     # print("ENTRATO!,", t, "steps")
 
