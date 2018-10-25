@@ -22,13 +22,12 @@ def obs_to_state(env, obs, n_states):
     return a, b
 
 
-def experiment(n_episodes, max_action, default_policy=False, policy=None, render=False):
+def experiment(n_episodes, default_policy=False, policy=None, render=False):
     res = [0,0] # array of results accumulator: {[0]: Loss, [1]: Victory}
     scores = [] # Cumulative rewards
     steps = [] # Steps per episode
     
     env = gym.make('MountainCar-v0')
-    env._max_episode_steps = max_action
     env.seed(91)
     n_states = 150
 
@@ -43,7 +42,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
         cumulative_reward = 0
         agent.extract_policy()
         
-        for t in range(max_action):
+        for t in range(env._max_episode_steps):
             if (render):
                 env.render()
             
@@ -53,7 +52,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
             agent.update_q((state[0], state[1]), (new_state[0], new_state[1]), next_action, reward)
             
             if end:
-                if t == max_action - 1:
+                if t == env._max_episode_steps - 1:
                     res[0] += 1
                 else:
                     res[1] += 1
@@ -70,14 +69,23 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
 
 
 # Training
-res = experiment(30000, 200)
-learnt_policy = np.argmax(res["Q"], axis=2)
+train_res = experiment(30000)
+learnt_policy = np.argmax(train_res["Q"], axis=2)
+training_mean_steps = train_res["steps"].mean()
+training_mean_score = train_res["scores"].mean()
+np.save('ql_policy.npy', learnt_policy)
 
 #np.savetxt("scores/ql_mountain_car.csv", res["scores"], delimiter=',')
 
 # Testing
-res2 = experiment(250, 250, default_policy=True, policy=learnt_policy)
-print("Testing accuracy: %s, Training mean score: %s" % (accuracy(res2["results"]), np.mean(res["scores"])))
+test_agent = np.load('ql_policy.npy')
+test_res = experiment(500, default_policy=True, policy=test_agent)
+testing_accuracy = accuracy(test_res["results"])
+testing_mean_steps = test_res["steps"].mean()
+testing_mean_score = test_res["scores"].mean()
+
+print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
+"Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)
 
 # Rendering
 #experiment(2, 200, default_policy=True, policy=learnt_policy, render=True)
