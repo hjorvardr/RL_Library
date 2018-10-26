@@ -32,9 +32,9 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     n_states = 150
 
     if (default_policy):
-        agent = SARSAAgent([n_states, n_states, env.action_space.n], policy=policy)
+        agent = SARSAAgent([n_states, n_states, env.action_space.n], policy=policy, epsilon=0.01, epsilon_lower_bound=0.01)
     else:
-        agent = SARSAAgent([n_states, n_states, env.action_space.n])
+        agent = SARSAAgent([n_states, n_states, env.action_space.n], epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1)
 
     for i_episode in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
@@ -69,13 +69,13 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
 
 
 # Training
-train_res = experiment(30000)
+train_res = experiment(50000)
 learnt_policy = np.argmax(train_res["Q"], axis=2)
 training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
 np.save('ql_policy.npy', learnt_policy)
 
-#np.savetxt("scores/ql_mountain_car.csv", res["scores"], delimiter=',')
+# np.savetxt("results/sarsa.csv", train_res["steps"], delimiter=',')
 
 # Testing
 test_agent = np.load('ql_policy.npy')

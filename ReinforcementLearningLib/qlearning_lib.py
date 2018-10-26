@@ -3,12 +3,14 @@ import numpy as np
 
 class QLAgent:
 
-    def __init__(self, shape, alpha=0.8, gamma=0.95, policy=None):
+    def __init__(self, shape, alpha=0.8, gamma=0.95, policy=None, epsilon=1,
+    epsilon_lower_bound=0.01, epsilon_decay_function=lambda e: e * 0.6):
         self.alpha = alpha # learning rate
         self.gamma = gamma # discount factor
         self.Q = np.zeros(shape)
-        self.epsilon = 0
-        self.epsilon_lower_bound = 0.01
+        self.epsilon = epsilon
+        self.epsilon_lower_bound = epsilon_lower_bound
+        self.epsilon_decay_function = epsilon_decay_function
         self.policy = policy
         self.actions = shape[-1]
         np.random.seed(91)
@@ -29,7 +31,9 @@ class QLAgent:
         if (self.policy is not None):
             next_action = self.policy[state]
         else:
-            self.epsilon = self.get_epsilon_exponential(episode_number)
+            self.epsilon = self.epsilon_decay_function(self.epsilon)
+            self.epsilon = np.amax([self.epsilon, self.epsilon_lower_bound])
+            # self.epsilon = self.get_epsilon_exponential(episode_number)
             if np.random.uniform() > self.epsilon:
                 next_action = self.next_action(self.Q[state])
             else:
@@ -37,13 +41,13 @@ class QLAgent:
 
         return next_action
     
-    def get_epsilon_linear(self, k, n):
-        res = (n - k) / n
-        return np.amax([res, self.epsilon_lower_bound])
+    # def get_epsilon_linear(self, k, n):
+    #     res = (n - k) / n
+    #     return np.amax([res, self.epsilon_lower_bound])
 
-    def get_epsilon_exponential(self, n):
-        res = 1 / (n + 1)
-        return np.amax([res, self.epsilon_lower_bound])
+    # def get_epsilon_exponential(self, n):
+    #     res = 1 / (n + 1)
+    #     return np.amax([res, self.epsilon_lower_bound])
 
     def next_action(self, state):
         """

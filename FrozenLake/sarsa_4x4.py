@@ -57,7 +57,7 @@ res = experiment(100000, 100)
 learnt_policy = np.argmax(res["Q"], axis=1)
 print("Policy learnt: ", learnt_policy)
 
-#np.savetxt("scores/sarsa_4x4.csv", res["steps"], delimiter=',')
+# np.savetxt("results/sarsa_4x4.csv", res["scores"], delimiter=',')
 
 # Testing
 res2 = experiment(5000, 1000, default_policy=True, policy=learnt_policy)

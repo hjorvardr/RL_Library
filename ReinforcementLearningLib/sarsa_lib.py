@@ -4,8 +4,10 @@ from qlearning_lib import QLAgent
 
 class SARSAAgent(QLAgent):
 
-    def __init__(self, shape, alpha=0.8, gamma=0.95, policy=None):
-        super().__init__(shape, alpha, gamma, policy)
+    def __init__(self, shape, alpha=0.8, gamma=0.95, policy=None, epsilon=1,
+    epsilon_lower_bound=0.01, epsilon_decay_function=lambda e: e * 0.6):
+        super().__init__(shape, alpha, gamma, policy, epsilon, epsilon_lower_bound,
+        epsilon_decay_function)
         self.current_policy = None
         self.shape = shape
 
@@ -34,7 +36,9 @@ class SARSAAgent(QLAgent):
         if (self.policy is not None):
             next_action = self.policy[state]
         else:
-            self.epsilon = self.get_epsilon_exponential(episode_number)
+            self.epsilon = self.epsilon_decay_function(self.epsilon)
+            self.epsilon = np.amax([self.epsilon, self.epsilon_lower_bound])
+            # self.epsilon = self.get_epsilon_exponential(episode_number)
             if np.random.uniform() > self.epsilon:
                 next_action = self.current_policy[state]
             else:

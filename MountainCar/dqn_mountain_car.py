@@ -96,8 +96,6 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
 # res = experiment(120)
 # res["agent"].save_model("model1")
 
-#np.savetxt("scores/dqn_mountain_car.csv", res["scores"], delimiter=',')
-
 # Testing
 # res2 = experiment(100, default_policy=True, policy="model1")
 # print("Testing accuracy: %s, Training mean score: %s" % (accuracy(res2["results"]), np.mean(res["scores"])))
@@ -182,6 +180,9 @@ def train_and_test(experiments):
         train_res["agent"].save_model(model_name)
         training_mean_steps = train_res["steps"].mean()
         training_mean_score = train_res["scores"].mean()
+
+        # np.savetxt("results/dqn.csv", train_res["steps"], delimiter=',')
+
         # Test
         test_agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=model_name, epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
         test_res = experiment(500, default_policy=True, policy=model_name, agent_config=test_agent)

@@ -21,9 +21,9 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
     env.seed(91)
     
     if (default_policy):
-        agent = QLAgent([env.observation_space.n, env.action_space.n], policy=policy)
+        agent = QLAgent([env.observation_space.n, env.action_space.n], policy=policy, alpha=1)
     else:
-        agent = QLAgent([env.observation_space.n, env.action_space.n])
+        agent = QLAgent([env.observation_space.n, env.action_space.n], alpha=1)
 
     for i_episode in tqdm(range(n_episodes)):
         state = env.reset()
@@ -62,7 +62,7 @@ res = experiment(50000, 100)
 learnt_policy = np.argmax(res["Q"], axis=1)
 print("Policy learnt: ", learnt_policy)
 
-#np.savetxt("scores/ql_4x4_deterministic.csv", res["steps"], delimiter=',')
+# np.savetxt("results/ql_4x4_deterministic.csv", res["scores"], delimiter=',')
 
 # Testing
 res2 = experiment(5000, 1000, default_policy=True, policy=learnt_policy)

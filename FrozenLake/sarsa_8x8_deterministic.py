@@ -21,9 +21,9 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
     env.seed(91)
     
     if (default_policy):
-        agent = SARSAAgent([env.observation_space.n, env.action_space.n], policy=policy)
+        agent = SARSAAgent([env.observation_space.n, env.action_space.n], policy=policy, alpha=1)
     else:
-        agent = SARSAAgent([env.observation_space.n, env.action_space.n])
+        agent = SARSAAgent([env.observation_space.n, env.action_space.n], alpha=1)
 
     for i_episode in tqdm(range(n_episodes)):
         state = env.reset()
@@ -63,7 +63,7 @@ res = experiment(10000, 1000)
 learnt_policy = np.argmax(res["Q"], axis=1)
 print("Policy learnt: ", learnt_policy)
 
-#np.savetxt("scores/sarsa_8x8_deterministic.csv", res["steps"], delimiter=',')
+# np.savetxt("results/sarsa_8x8_deterministic.csv", res["scores"], delimiter=',')
 
 # Testing
 res2 = experiment(5000, 1000, default_policy=True, policy=learnt_policy)
