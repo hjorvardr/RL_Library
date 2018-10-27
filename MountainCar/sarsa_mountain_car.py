@@ -34,13 +34,14 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     if (default_policy):
         agent = SARSAAgent([n_states, n_states, env.action_space.n], policy=policy, epsilon=0.01, epsilon_lower_bound=0.01)
     else:
-        agent = SARSAAgent([n_states, n_states, env.action_space.n], epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1)
+        agent = SARSAAgent([n_states, n_states, env.action_space.n], epsilon_decay_function=lambda e: e * 0.6, epsilon_lower_bound=0.1)
 
     for i_episode in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
         state = obs_to_state(env, state, n_states)
         cumulative_reward = 0
-        agent.extract_policy()
+        if not default_policy:
+            agent.extract_policy()
         
         for t in range(env._max_episode_steps):
             if (render):
@@ -49,7 +50,8 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
             next_action = agent.act((state[0], state[1]), i_episode)
             new_state, reward, end, _ = env.step(next_action)
             new_state = obs_to_state(env, new_state, n_states)
-            agent.update_q((state[0], state[1]), (new_state[0], new_state[1]), next_action, reward)
+            if default_policy is None:
+                agent.update_q((state[0], state[1]), (new_state[0], new_state[1]), next_action, reward)
             
             if end:
                 if t == env._max_episode_steps - 1:
@@ -78,11 +80,13 @@ np.save('ql_policy.npy', learnt_policy)
 # np.savetxt("results/sarsa.csv", train_res["steps"], delimiter=',')
 
 # Testing
-test_agent = np.load('ql_policy.npy')
+test_agent = np.load('sarsa_policy.npy')
 test_res = experiment(500, default_policy=True, policy=test_agent)
 testing_accuracy = accuracy(test_res["results"])
 testing_mean_steps = test_res["steps"].mean()
 testing_mean_score = test_res["scores"].mean()
+
+# np.savetxt("results/sarsa.csv", test_res["steps"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)

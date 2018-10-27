@@ -189,6 +189,8 @@ def train_and_test(experiments):
         testing_accuracy = accuracy(test_res["results"])
         testing_mean_steps = test_res["steps"].mean()
         testing_mean_score = test_res["scores"].mean()
+        
+        # np.savetxt("results/ddqn.csv", test_res["steps"], delimiter=',')
 
         df.loc[len(df)] = [model_name, len(train_res["steps"]), training_mean_score, training_mean_steps, testing_accuracy, testing_mean_score, testing_mean_steps]
 

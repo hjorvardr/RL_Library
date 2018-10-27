@@ -1,5 +1,4 @@
 import numpy as np
-import dqn_lib
 from enum import Enum
 
 class EnsemblerType(Enum):
@@ -16,9 +15,6 @@ class EnsemblerAgent:
         if self.ensembler_type == EnsemblerType.MAJOR_VOTING_BASED:
             self.votes = np.zeros(self.output_size)
         
-        if self.ensembler_type == EnsemblerType.AGGREGATION_BASED:
-            self.probs = np.zeros(self.output_size)
-        
         if self.ensembler_type == EnsemblerType.TRUST_BASED:
             self.votes_per_agent = np.zeros(len(self.agents))
             self.votes = np.zeros(self.output_size)
@@ -28,12 +24,12 @@ class EnsemblerAgent:
 
             for i in range(len(self.trust)):
                 self.trust[i] = 1 / len(self.agents)
-            print("INITIAL TRUST: ", self.trust)
+            # print("INITIAL TRUST: ", self.trust)
 
     def act(self, state):
         if self.ensembler_type == EnsemblerType.MAJOR_VOTING_BASED:
             for agent in self.agents:
-                suggested_action, probs = agent.act(state)
+                suggested_action = agent.act(state)
                 self.votes[suggested_action] += 1
             action = np.argmax(self.votes)
             self.votes = np.zeros(self.output_size)
@@ -42,7 +38,7 @@ class EnsemblerAgent:
         if self.ensembler_type == EnsemblerType.TRUST_BASED:
             for i in range(len(self.agents)):
                 agent = self.agents[i]
-                suggested_action, probs = agent.act(state)
+                suggested_action = agent.act(state)
                 self.votes[suggested_action] += self.trust[i]
 
             action = np.argmax(self.votes)
@@ -51,7 +47,7 @@ class EnsemblerAgent:
             
             for i in range(len(self.agents)):   
                 agent = self.agents[i]
-                suggested_action, probs = agent.act(state)
+                suggested_action = agent.act(state)
                 if action == suggested_action:
                     self.votes_per_agent[i] += 1
             self.total_actions += 1
@@ -61,7 +57,7 @@ class EnsemblerAgent:
     
     def trust_update(self, win):
         if self.ensembler_type == EnsemblerType.TRUST_BASED:
-            print(self.votes_per_agent, "win:", win, "total actions:", self.total_actions)
+            # print(self.votes_per_agent, "win:", win, "total actions:", self.total_actions)
             for i in range(len(self.agents)):
                 if win:
                     self.trust[i] = self.trust[i] * (1 + self.trust_rate * (self.votes_per_agent[i] / self.total_actions))
@@ -71,5 +67,5 @@ class EnsemblerAgent:
             self.trust = self.trust / sum(self.trust)
             self.votes_per_agent = np.zeros(len(self.agents))
             self.total_actions = 0
-            print(self.trust)
+            # print(self.trust)
                     

@@ -9,6 +9,8 @@ class SARSAAgent(QLAgent):
         super().__init__(shape, alpha, gamma, policy, epsilon, epsilon_lower_bound,
         epsilon_decay_function)
         self.current_policy = None
+        if policy is not None:
+            self.current_policy = policy
         self.shape = shape
 
     def extract_policy(self):
