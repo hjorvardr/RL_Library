@@ -66,7 +66,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
             next_action = agent.act(state)                       
             new_state, reward, end, _ = env.step(next_action)
 
-            reward = abs(new_state[0] - (-0.5)) # r in [0, 1]
+            # reward = abs(new_state[0] - (-0.5)) # r in [0, 1]
             new_state = np.reshape(new_state, [1, 2])
             
             agent.memoise((state, next_action, reward, new_state, end))
@@ -133,7 +133,7 @@ layers = [layer1, layer2]
 # experiments.append(("model20", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)))
 # experiments.append(("model21", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=2000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)))
 # experiments.append(("model22", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=3000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)))
-# experiments.append(("model23", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
+experiments.append(("17-model23", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model24", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=2000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model25", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=3000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model26", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=4000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
@@ -142,7 +142,7 @@ layers = [layer1, layer2]
 # experiments.append(("model29", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=70000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model30", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=8000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model31", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=9000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
-experiments.append(("17-model32", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=10000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
+# experiments.append(("model32", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=10000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # layer1 = Dense(10, input_dim=input_dim, activation='relu')
 # layer2 = Dense(output_dim)
 # layers = [layer1, layer2]
@@ -181,7 +181,7 @@ def train_and_test(experiments):
         training_mean_steps = train_res["steps"].mean()
         training_mean_score = train_res["scores"].mean()
 
-        # np.savetxt("results/dqn.csv", train_res["steps"], delimiter=',')
+        # np.savetxt("results/ddqn.csv", train_res["steps"], delimiter=',')
 
         # Test
         test_agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=model_name, epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)

@@ -19,7 +19,7 @@ def accuracy(results):
     return results[1] / (results[0] + results[1]) * 100
 
 
-def experiment(n_episodes, testing=False, render = False):
+def experiment(n_episodes, testing=False, render = False, agent_config=None):
     res = [0, 0] # array of results accumulator: {[0]: Loss, [1]: Victory}
     scores = [] # Cumulative rewards
     steps = [] # Steps per episode
@@ -31,16 +31,18 @@ def experiment(n_episodes, testing=False, render = False):
     input_dim = env.observation_space.shape[0]
     output_dim = env.action_space.n
 
-    int1 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="17-model23", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
-    int2 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="41-model23", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
-    int3 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="73-model23", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
-    bad1 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="luigi1", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
-    bad2 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="luigi2", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
+    if agent_config is None:
+        int1 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="17-model23", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
+        int2 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="41-model23", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
+        int3 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="73-model23", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
+        bad1 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="luigi1", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
+        # bad2 = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename="luigi2", epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
 
-    agents = [int1, int2, int3]
-
-    agent = EnsemblerAgent(output_dim, agents, EnsemblerType.MAJOR_VOTING_BASED)
-    # agent = EnsemblerAgent(output_dim, agents, EnsemblerType.TRUST_BASED)
+        agents = [int1, int2, bad1]
+        # agent = EnsemblerAgent(output_dim, agents, EnsemblerType.MAJOR_VOTING_BASED)
+        agent = EnsemblerAgent(output_dim, agents, EnsemblerType.TRUST_BASED)
+    else:
+        agent = agent_config
 
     for _ in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
@@ -81,14 +83,14 @@ def experiment(n_episodes, testing=False, render = False):
     return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent }
     
 # Training
-# training_res = experiment(500, testing=False)
-# print("Training accuracy:", accuracy(training_res["results"]), "Training Mean steps:", \
-# np.mean(training_res["steps"]), "Training Mean score:", np.mean(training_res["scores"]))
+training_res = experiment(500, testing=False)
+print("Training accuracy:", accuracy(training_res["results"]), "Training Mean steps:", \
+np.mean(training_res["steps"]), "Training Mean score:", np.mean(training_res["scores"]))
 
 # np.savetxt("results/major.csv", training_res["steps"], delimiter=',')
 
 # Testing
-test_res = experiment(500, testing=True)
+test_res = experiment(500, testing=True, agent_config=training_res["agent"])
 print("Testing accuracy: %s, Testing mean score: %s" % (accuracy(test_res["results"]), np.mean(test_res["scores"])))
 
-# np.savetxt("results/trust.csv", test_res["steps"], delimiter=',')
+np.savetxt("results/trust.csv", test_res["steps"], delimiter=',')
