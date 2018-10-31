@@ -12,7 +12,7 @@ def accuracy(results):
     return results[1] / (results[0] + results[1]) * 100
 
 
-def experiment(n_episodes, max_action, default_policy=False, policy=None, render=False):
+def experiment(n_episodes, default_policy=False, policy=None, render=False):
     res = [0, 0] # array of results accumulator: {[0]: Loss, [1]: Victory}
     scores = [] # Cumulative rewards
     steps = [] # Steps per episode
@@ -23,7 +23,8 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
     if (default_policy):
         agent = SARSAAgent([env.observation_space.n, env.action_space.n], policy=policy, alpha=1)
     else:
-        agent = SARSAAgent([env.observation_space.n, env.action_space.n], alpha=1)
+        agent = SARSAAgent([env.observation_space.n, env.action_space.n], alpha=1,
+                          epsilon_decay_function=lambda e: e * 0.995)
 
     for i_episode in tqdm(range(n_episodes)):
         state = env.reset()
@@ -31,7 +32,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
         if not default_policy:
             agent.extract_policy()
         
-        for t in range(max_action):
+        for t in range(100):
             if (render):
                 env.render()
                 time.sleep(1)
@@ -41,7 +42,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
             if policy is None:
                 agent.update_q(state, new_state, next_action, reward)
                 
-            if end:
+            if end or t == 99:
                 res[int(reward)] += 1
                 steps.append(t)
                 cumulative_reward += reward
@@ -62,15 +63,26 @@ gym.envs.registration.register(
 )
 
 # Training
-res = experiment(10000, 100)
-learnt_policy = np.argmax(res["Q"], axis=1)
-print("Policy learnt: ", learnt_policy)
+train_res = experiment(350)
+learnt_policy = np.argmax(train_res["Q"], axis=1)
+training_mean_steps = train_res["steps"].mean()
+training_mean_score = train_res["scores"].mean()
+np.save('sarsa_4x4d_policy.npy', learnt_policy)
+#print("Policy learnt: ", learnt_policy)
 
-# np.savetxt("results/sarsa_4x4_deterministic.csv", res["scores"], delimiter=',')
+# np.savetxt("results/training/sarsa_4x4_deterministic.csv", train_res["scores"], delimiter=',')
 
 # Testing
-res2 = experiment(5000, 1000, default_policy=True, policy=learnt_policy)
-print("Testing accuracy: %s, Training mean score: %s" % (accuracy(res2["results"]), np.mean(res["scores"])))
+test_agent = np.load('sarsa_4x4d_policy.npy')
+test_res = experiment(500, default_policy=True, policy=test_agent)
+testing_accuracy = accuracy(test_res["results"])
+testing_mean_steps = test_res["steps"].mean()
+testing_mean_score = test_res["scores"].mean()
+
+# np.savetxt("results/testing/sarsa_4x4_deterministic.csv", test_res["scores"], delimiter=',')
+
+print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
+"Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)
 
 # Rendering
-#experiment(5, 1000, default_policy=True, policy=learnt_policy, render=True)
+#experiment(5, default_policy=True, policy=learnt_policy, render=True)

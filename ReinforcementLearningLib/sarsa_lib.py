@@ -8,9 +8,7 @@ class SARSAAgent(QLAgent):
     epsilon_lower_bound=0.01, epsilon_decay_function=lambda e: e * 0.6):
         super().__init__(shape, alpha, gamma, policy, epsilon, epsilon_lower_bound,
         epsilon_decay_function)
-        self.current_policy = None
-        if policy is not None:
-            self.current_policy = policy
+        self.current_policy = policy
         self.shape = shape
 
     def extract_policy(self):
@@ -36,7 +34,7 @@ class SARSAAgent(QLAgent):
 
     def act(self, state, episode_number):
         if (self.policy is not None):
-            next_action = self.policy[state]
+            next_action = self.current_policy[state]
         else:
             self.epsilon = self.epsilon_decay_function(self.epsilon)
             self.epsilon = np.amax([self.epsilon, self.epsilon_lower_bound])

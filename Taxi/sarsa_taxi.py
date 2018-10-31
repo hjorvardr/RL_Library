@@ -77,6 +77,8 @@ testing_accuracy = accuracy(test_res["results"])
 testing_mean_steps = test_res["steps"].mean()
 testing_mean_score = test_res["scores"].mean()
 
+# np.savetxt("results/sarsa.csv", test_res["scores"], delimiter=',')
+
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)
 

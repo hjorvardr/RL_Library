@@ -36,7 +36,8 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
             
             next_action = agent.act(state, i_episode)
             new_state, reward, end, _ = env.step(next_action)
-            agent.update_q(state, new_state, next_action, reward)
+            if policy is None:
+                agent.update_q(state, new_state, next_action, reward)
 
             if reward == -10:
                 res[0] += 1
@@ -73,6 +74,8 @@ test_res = experiment(10000, default_policy=True, policy=test_agent)
 testing_accuracy = accuracy(test_res["results"])
 testing_mean_steps = test_res["steps"].mean()
 testing_mean_score = test_res["scores"].mean()
+
+# np.savetxt("results/ql.csv", test_res["scores"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)

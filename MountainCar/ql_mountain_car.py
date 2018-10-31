@@ -48,7 +48,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
             next_action = agent.act((state[0], state[1]), i_episode)
             new_state, reward, end, _ = env.step(next_action)
             new_state = obs_to_state(env, new_state, n_states)
-            if default_policy is None:
+            if policy is None:
                 agent.update_q((state[0], state[1]), (new_state[0], new_state[1]), next_action, reward)
             
             if end:
