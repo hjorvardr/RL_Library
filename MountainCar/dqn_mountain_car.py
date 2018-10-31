@@ -34,11 +34,11 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
 
     if agent_config is None:
         if default_policy:
-            agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0, epsilon_lower_bound=0, learn_thresh=0)
+            agent = DQNAgent(output_dim, None, use_ddqn=False, default_policy=True, model_filename=policy, epsilon=0, epsilon_lower_bound=0, learn_thresh=0)
         else:
             layer1 = Dense(15, input_dim=input_dim, activation='relu')
             layer2 = Dense(output_dim)
-            agent = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))
+            agent = DQNAgent(output_dim, [layer1, layer2], use_ddqn=False, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.95, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001))
     else:
         agent = agent_config
 
@@ -133,7 +133,7 @@ layers = [layer1, layer2]
 # experiments.append(("model20", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)))
 # experiments.append(("model21", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=2000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)))
 # experiments.append(("model22", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=3000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)))
-experiments.append(("17-model23", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
+experiments.append(("17-model23-single", 25000, DQNAgent(output_dim, layers, use_ddqn=False, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model24", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=2000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model25", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=3000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model26", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=4000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
@@ -181,16 +181,16 @@ def train_and_test(experiments):
         training_mean_steps = train_res["steps"].mean()
         training_mean_score = train_res["scores"].mean()
 
-        # np.savetxt("results/ddqn.csv", train_res["steps"], delimiter=',')
+        np.savetxt("results/dqn.csv", train_res["steps"], delimiter=',')
 
         # Test
-        test_agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=model_name, epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
+        test_agent = DQNAgent(output_dim, None, use_ddqn=False, default_policy=True, model_filename=model_name, epsilon=0.01, epsilon_lower_bound=0.01, learn_thresh=0)
         test_res = experiment(500, default_policy=True, policy=model_name, agent_config=test_agent)
         testing_accuracy = accuracy(test_res["results"])
         testing_mean_steps = test_res["steps"].mean()
         testing_mean_score = test_res["scores"].mean()
         
-        # np.savetxt("results/ddqn.csv", test_res["steps"], delimiter=',')
+        np.savetxt("results/dqn.csv", test_res["steps"], delimiter=',')
 
         df.loc[len(df)] = [model_name, len(train_res["steps"]), training_mean_score, training_mean_steps, testing_accuracy, testing_mean_score, testing_mean_steps]
 

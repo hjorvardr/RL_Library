@@ -50,7 +50,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
             next_action = agent.act((state[0], state[1]), i_episode)
             new_state, reward, end, _ = env.step(next_action)
             new_state = obs_to_state(env, new_state, n_states)
-            if default_policy is None:
+            if policy is None:
                 agent.update_q((state[0], state[1]), (new_state[0], new_state[1]), next_action, reward)
             
             if end:
@@ -75,7 +75,7 @@ train_res = experiment(50000)
 learnt_policy = np.argmax(train_res["Q"], axis=2)
 training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
-np.save('ql_policy.npy', learnt_policy)
+np.save('sarsa_policy.npy', learnt_policy)
 
 # np.savetxt("results/sarsa.csv", train_res["steps"], delimiter=',')
 
