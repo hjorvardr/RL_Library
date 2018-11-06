@@ -39,7 +39,6 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
     
     env = gym.make('CartPole-v0')
     env = env.unwrapped
-    env._max_episode_steps = 10000000000000
     env.seed(seed)
 
     input_dim = env.observation_space.shape[0]
@@ -61,8 +60,6 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
         
         t = 0
         while True:
-        #for t in range(max_action):
-
             if (render):
                 env.render()
                 time.sleep(0.1)
@@ -71,19 +68,16 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
                     
             new_state, reward, end, _ = env.step(next_action)
 
-            #print(reward)
             x, x_dot, theta, theta_dot = new_state
-            new_state = np.reshape(new_state,[1,4])
+            new_state = np.reshape(new_state, [1, 4])
             
-            r1 = (env.x_threshold - abs(x))/env.x_threshold - 0.8
-            r2 = (env.theta_threshold_radians - abs(theta))/env.theta_threshold_radians - 0.5
+            r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
+            r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
             reward = r1 + r2
             
-            #if t > 300:
-            #    end = True
             agent.memoise((state, next_action, reward, new_state, end))
 
-            if end:# or t > 300:
+            if end or t > 199:
                 if  t < 195:
                     res[0] += 1
                     #reward = reward - 100
@@ -105,14 +99,27 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
         scores.append(cumulative_reward)
     env.close()
     return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent }
-    
-# Training
-res = experiment(10000)
-res["agent"].save_model("model1")
 
-# Testing
-res2 = experiment(100, default_policy=True, policy="model1")
-print("Testing accuracy: %s, Training mean score: %s" % (accuracy(res2["results"]), np.mean(res["scores"])))
+# # Training
+# train_res = experiment(500)
+# train_res["agent"].save_model("model1")
+# training_mean_steps = train_res["steps"].mean()
+# training_mean_score = train_res["scores"].mean()
+
+# np.savetxt("results/training/ddqn_scores.csv", train_res["scores"], delimiter=',')
+# np.savetxt("results/training/ddqn_steps.csv", train_res["steps"], delimiter=',')
+
+# # Testing
+# test_res = experiment(500, default_policy=True, policy="model1")
+# testing_accuracy = accuracy(test_res["results"])
+# testing_mean_steps = test_res["steps"].mean()
+# testing_mean_score = test_res["scores"].mean()
+
+# np.savetxt("results/testing/ddqn_scores.csv", test_res["scores"], delimiter=',')
+# np.savetxt("results/testing/ddqn_steps.csv", test_res["steps"], delimiter=',')
+
+# print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
+# "Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)
 
 # Rendering
-#experiment(10, render=True, default_policy=True, policy="model1")
+experiment(1, render=True, default_policy=True, policy="model1")
