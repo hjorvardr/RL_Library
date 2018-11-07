@@ -8,6 +8,7 @@ from keras import backend as K
 from keras.layers import Dense
 from tqdm import tqdm
 from dqn_lib import DQNAgent
+from ensembler import *
 
 os.environ['PYTHONHASHSEED'] = '0'
 
@@ -50,7 +51,9 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
     if default_policy:
         agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0, epsilon_lower_bound=0, learn_thresh=0)
     else:
-        agent = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000)
+        agent1 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
+        agent2 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
+        agentE = EnsemblerAgent(output_dim, [agent1, agent2], EnsemblerType.RANK_VOTING_BASED)
 
     for _ in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
@@ -64,7 +67,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
                 env.render()
                 time.sleep(0.1)
 
-            next_action = agent.act(state)
+            next_action = agentE.act(state)
                     
             new_state, reward, end, _ = env.step(next_action)
 
@@ -72,17 +75,14 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
             new_state = np.reshape(new_state, [1, 4])
             
             r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
-            # r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
-            # reward = r1 + r2
-            reward = r1
+            r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
             
-            agent.memoise((state, next_action, reward, new_state, end))
+            agent1.memoise((state, next_action, r1, new_state, end))
+            agent2.memoise((state, next_action, r2, new_state, end))
 
             if end or t > 199:
                 if  t < 195:
                     res[0] += 1
-                    #reward = reward - 100
-                    #memory.append((state, next_action, reward, new_state, end))
                 else:
                     res[1] += 1
                     print("ENTRATO!,", t, "steps","reward: ",cumulative_reward)
@@ -93,32 +93,24 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
                 state = new_state
                 cumulative_reward += reward
 
-            agent.learn()
+            agent1.learn()
+            agent2.learn()
             t += 1
 
         cumulative_reward += reward
         scores.append(cumulative_reward)
     env.close()
-    return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent }
+    return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores)}
 
 # Training
-train_res = experiment(1000)
-train_res["agent"].save_model("model1_r1")
+train_res = experiment(300)
 training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
 
-np.savetxt("results/training/ddqn_r1.csv", train_res["steps"], delimiter=',')
-
-# Testing
-test_res = experiment(500, default_policy=True, policy="model1_r1")
-testing_accuracy = accuracy(test_res["results"])
-testing_mean_steps = test_res["steps"].mean()
-testing_mean_score = test_res["scores"].mean()
-
-np.savetxt("results/testing/ddqn_r1.csv", test_res["steps"], delimiter=',')
+np.savetxt("results/ddqn_ens.csv", train_res["steps"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
-"Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)
+"Training mean steps", training_mean_steps)
 
 # Rendering
 # experiment(1, render=True, default_policy=True, policy="model1")

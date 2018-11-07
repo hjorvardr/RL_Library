@@ -4,6 +4,7 @@ from enum import Enum
 class EnsemblerType(Enum):
     MAJOR_VOTING_BASED = 0
     TRUST_BASED = 1
+    RANK_VOTING_BASED = 2
 
 
 class EnsemblerAgent:
@@ -13,6 +14,9 @@ class EnsemblerAgent:
         self.ensembler_type = ensembler_type
 
         if self.ensembler_type == EnsemblerType.MAJOR_VOTING_BASED:
+            self.votes = np.zeros(self.output_size)
+            
+        if self.ensembler_type == EnsemblerType.RANK_VOTING_BASED:
             self.votes = np.zeros(self.output_size)
         
         if self.ensembler_type == EnsemblerType.TRUST_BASED:
@@ -25,6 +29,8 @@ class EnsemblerAgent:
             for i in range(len(self.trust)):
                 self.trust[i] = 1 / len(self.agents)
             # print("INITIAL TRUST: ", self.trust)
+
+
 
     def act(self, state):
         if self.ensembler_type == EnsemblerType.MAJOR_VOTING_BASED:
@@ -52,6 +58,24 @@ class EnsemblerAgent:
                     self.votes_per_agent[i] += 1
             self.total_actions += 1
             return action    
+
+        if self.ensembler_type == EnsemblerType.RANK_VOTING_BASED:
+            for agent in self.agents:
+                suggested_action, prediction = agent.act(state, True)
+                # rank prediction actions
+                temp = prediction.argsort()
+                ranks = np.empty_like(temp)
+                ranks[temp] = np.arange(self.output_size)
+                for j in range(self.output_size):
+                    self.votes[j] += ranks[j]
+            action = np.argmax(self.votes)
+            self.votes = np.zeros(self.output_size)
+            return action
+        # for RANKING VOTING
+        #array = np.array([4,2,7,1])
+        #temp = array.argsort()
+        #ranks = np.empty_like(temp)
+        #ranks[temp] = np.arange(len(array))
 
         return 73 # Houston, we have a problem!
     
