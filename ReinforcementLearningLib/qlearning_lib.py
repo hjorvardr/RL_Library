@@ -27,7 +27,7 @@ class QLAgent:
         future_action = np.argmax(self.Q[new_state]) # Find the best action to perform at time t+1
         self.Q[state][action] = (1 - self.alpha) * self.Q[state][action] + self.alpha * (reward + self.gamma * self.Q[new_state][future_action])
 
-    def act(self, state, episode_number):
+    def act(self, state=None, return_prob_dist=False):
         if (self.policy is not None):
             next_action = self.policy[state]
         else:
@@ -35,11 +35,15 @@ class QLAgent:
             self.epsilon = np.amax([self.epsilon, self.epsilon_lower_bound])
             # self.epsilon = self.get_epsilon_exponential(episode_number)
             if np.random.uniform() > self.epsilon:
-                next_action = self.next_action(self.Q[state])
+                prediction = self.Q[state]
+                next_action = self.next_action(prediction)
             else:
-                next_action = np.argmax(np.random.uniform(0, 1, size=self.actions))
+                prediction = np.random.uniform(0, 1, size=self.actions)
+                next_action = np.argmax(prediction)
 
-        return next_action
+        if not return_prob_dist:
+            return next_action
+        return next_action, prediction
     
     # def get_epsilon_linear(self, k, n):
     #     res = (n - k) / n

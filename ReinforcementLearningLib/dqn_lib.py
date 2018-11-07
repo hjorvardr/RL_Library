@@ -56,7 +56,7 @@ class DQNAgent:
 
             if self.use_ddqn:
                 self.target_model = self.build_model(layers)
-        self.evaluate_model.summary()
+        # self.evaluate_model.summary()
 
     def build_model(self, layers):
         model = Sequential()
@@ -99,13 +99,14 @@ class DQNAgent:
     def random_pick(self):
         return self.memory.random_pick(self.batch_size)
 
-    def act(self, state):
+    def act(self, state, return_prob_dist=False):
         if np.random.uniform() > self.epsilon:
             # state = np.float32(state / 255) # TODO: generalisation
-            prediction = self.evaluate_model.predict(state)
-            next_action = np.argmax(prediction[0])
+            prediction = self.evaluate_model.predict(state)[0]
+            next_action = np.argmax(prediction)
         else:
-            next_action = np.argmax(np.random.uniform(0, 1, size=self.output_size))
+            prediction = np.random.uniform(0, 1, size=self.output_size)
+            next_action = np.argmax(prediction)
 
         if self.total_steps > self.learn_thresh:
             self.epsilon = self.epsilon_decay_function(self.epsilon)
@@ -113,7 +114,9 @@ class DQNAgent:
 
         self.total_steps += 1
 
-        return next_action
+        if not return_prob_dist:
+            return next_action
+        return next_action, prediction
 
     def memoise(self, t):
         if not self.default_policy:
@@ -124,7 +127,7 @@ class DQNAgent:
             (self.total_steps % self.update_rate) == 0 and not self.default_policy and
             self.use_ddqn == True):
             self.update_target_model()
-            print("model updated, epsilon:", self.epsilon)
+            # print("model updated, epsilon:", self.epsilon)
         if self.total_steps > self.learn_thresh and not self.default_policy and self.total_steps % 4 == 0:   
             self.replay()
 
