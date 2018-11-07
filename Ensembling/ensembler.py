@@ -37,7 +37,7 @@ class EnsemblerAgent:
             for agent in self.agents:
                 suggested_action = agent.act(state)
                 self.votes[suggested_action] += 1
-            action = np.argmax(self.votes)
+            action = np.random.choice(np.argwhere(self.votes==np.amax(self.votes)).flatten())
             self.votes = np.zeros(self.output_size)
             return action
         
@@ -47,7 +47,7 @@ class EnsemblerAgent:
                 suggested_action = agent.act(state)
                 self.votes[suggested_action] += self.trust[i]
 
-            action = np.argmax(self.votes)
+            action = np.random.choice(np.argwhere(self.votes==np.amax(self.votes)).flatten())
             
             self.votes = np.zeros(self.output_size)
             
@@ -68,7 +68,7 @@ class EnsemblerAgent:
                 ranks[temp] = np.arange(self.output_size)
                 for j in range(self.output_size):
                     self.votes[j] += ranks[j]
-            action = np.argmax(self.votes)
+            action = np.random.choice(np.argwhere(self.votes==np.amax(self.votes)).flatten())
             self.votes = np.zeros(self.output_size)
             return action
         # for RANKING VOTING

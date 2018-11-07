@@ -51,9 +51,11 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
     if default_policy:
         agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0, epsilon_lower_bound=0, learn_thresh=0)
     else:
-        agent1 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
-        agent2 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
-        agentE = EnsemblerAgent(output_dim, [agent1, agent2], EnsemblerType.RANK_VOTING_BASED)
+        agent1 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.000036, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
+        agent2 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.000036, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
+        agent3 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.000036, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
+        # agent4 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
+        agentE = EnsemblerAgent(output_dim, [agent1, agent2, agent3], EnsemblerType.RANK_VOTING_BASED)
 
     for _ in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
@@ -79,6 +81,8 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
             
             agent1.memoise((state, next_action, r1, new_state, end))
             agent2.memoise((state, next_action, r2, new_state, end))
+            agent3.memoise((state, next_action, r2, new_state, end))
+            # agent4.memoise((state, next_action, r2, new_state, end))
 
             if end or t > 199:
                 if  t < 195:
@@ -93,8 +97,8 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
                 state = new_state
                 cumulative_reward += reward
 
-            agent1.learn()
-            agent2.learn()
+            for agent in agentE.agents:
+                agent.learn()
             t += 1
 
         cumulative_reward += reward
@@ -103,11 +107,11 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
     return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores)}
 
 # Training
-train_res = experiment(300)
+train_res = experiment(1000)
 training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
 
-np.savetxt("results/ddqn_ens.csv", train_res["steps"], delimiter=',')
+np.savetxt("results/ens.csv", train_res["steps"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps)
