@@ -48,9 +48,9 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
     layer2 = Dense(output_dim)
         
     if default_policy:
-        agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0, epsilon_lower_bound=0, learn_thresh=0)
+        agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0, epsilon_lower_bound=0, learn_thresh=0, tb_dir=None)
     else:
-        agent = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000)
+        agent = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
 
     for _ in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
@@ -72,9 +72,11 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
             new_state = np.reshape(new_state, [1, 4])
             
             r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
-            # r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
+            r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
+            r3 = -abs(theta_dot)
+            reward = r1 + r2 + r3
             # reward = r1 + r2
-            reward = r1
+            # reward = r1
             
             agent.memoise((state, next_action, reward, new_state, end))
 
@@ -101,21 +103,22 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
     env.close()
     return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent }
 
+
 # Training
-train_res = experiment(1000)
-train_res["agent"].save_model("model1_r1")
+train_res = experiment(500)
+train_res["agent"].save_model("ddqn")
 training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
 
-np.savetxt("results/training/ddqn_r1.csv", train_res["steps"], delimiter=',')
+# np.savetxt("results/training/ddqn.csv", train_res["steps"], delimiter=',')
 
 # Testing
-test_res = experiment(500, default_policy=True, policy="model1_r1")
+test_res = experiment(500, default_policy=True, policy="ddqn")
 testing_accuracy = accuracy(test_res["results"])
 testing_mean_steps = test_res["steps"].mean()
 testing_mean_score = test_res["scores"].mean()
 
-np.savetxt("results/testing/ddqn_r1.csv", test_res["steps"], delimiter=',')
+# np.savetxt("results/testing/ddqn.csv", test_res["steps"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)
