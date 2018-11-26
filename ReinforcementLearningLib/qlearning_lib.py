@@ -13,6 +13,7 @@ class QLAgent:
         self.epsilon_decay_function = epsilon_decay_function
         self.policy = policy
         self.actions = shape[-1]
+        self.discrete_state = True
         np.random.seed(91)
 
     def update_q(self, state, new_state, action, reward):

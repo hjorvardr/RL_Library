@@ -48,6 +48,7 @@ class DQNAgent:
         self.batch_size = batch_size
         self.learn_thresh = learn_thresh # Number of steps from which the network starts learning
         self.update_rate = update_rate
+        self.discrete_state = False
 
         if self.default_policy:
             self.evaluate_model = self.load_model(model_filename)

@@ -49,6 +49,8 @@ def evaluate(env, agentE):
                     
             new_state, reward, end, _ = env.step(next_action)
 
+            new_state = np.reshape(new_state, [1, 4])
+
             if end or t > 199:
                 if  t < 195:
                     eval_res[0] += 1

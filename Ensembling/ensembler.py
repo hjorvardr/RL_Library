@@ -32,9 +32,13 @@ class EnsemblerAgent:
 
 
 
-    def act(self, state):
+    def act(self, state, discrete_state=None):
+        original_state = state
         if self.ensembler_type == EnsemblerType.MAJOR_VOTING_BASED:
             for agent in self.agents:
+                state = original_state
+                if agent.discrete_state:
+                    state = discrete_state
                 suggested_action = agent.act(state)
                 self.votes[suggested_action] += 1
             action = np.random.choice(np.argwhere(self.votes==np.amax(self.votes)).flatten())
@@ -44,6 +48,9 @@ class EnsemblerAgent:
         if self.ensembler_type == EnsemblerType.TRUST_BASED:
             for i in range(len(self.agents)):
                 agent = self.agents[i]
+                state = original_state
+                if agent.discrete_state:
+                    state = discrete_state
                 suggested_action = agent.act(state)
                 self.votes[suggested_action] += self.trust[i]
 
@@ -53,6 +60,9 @@ class EnsemblerAgent:
             
             for i in range(len(self.agents)):   
                 agent = self.agents[i]
+                state = original_state
+                if agent.discrete_state:
+                    state = discrete_state
                 suggested_action = agent.act(state)
                 if action == suggested_action:
                     self.votes_per_agent[i] += 1
@@ -61,6 +71,9 @@ class EnsemblerAgent:
 
         if self.ensembler_type == EnsemblerType.RANK_VOTING_BASED:
             for agent in self.agents:
+                state = original_state
+                if agent.discrete_state:
+                    state = discrete_state
                 suggested_action, prediction = agent.act(state, True)
                 # rank prediction actions
                 temp = prediction.argsort()
