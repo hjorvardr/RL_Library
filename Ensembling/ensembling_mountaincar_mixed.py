@@ -48,20 +48,20 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     layer1 = Dense(15, input_dim=input_dim, activation='relu')
     layer2 = Dense(output_dim)
 
-    agent1 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)
-    agent2 = QLAgent([n_states, n_states, env.action_space.n], epsilon_decay_function=lambda e: e * 0.6, epsilon_lower_bound=0.1)
-    agent3 = SARSAAgent([n_states, n_states, env.action_space.n], epsilon_decay_function=lambda e: e * 0.6, epsilon_lower_bound=0.1)
+    agent1 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)
+    #agent2 = QLAgent([n_states, n_states, env.action_space.n], epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.01)
+    #agent3 = SARSAAgent([n_states, n_states, env.action_space.n], epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.01)
+    agent4 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=False, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.01, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)
 
 
-    agents = [agent1, agent2, agent3]
-    agentE = EnsemblerAgent(env.action_space.n, agents, EnsemblerType.MAJOR_VOTING_BASED)
+    agents = [agent1, agent4]
+    agentE = EnsemblerAgent(env.action_space.n, agents, EnsemblerType.TRUST_BASED)
 
     evaluate = False
     
     for i_episode in tqdm(range(n_episodes + 1), desc="Episode"):
         state = env.reset()
-        if (i_episode % 100) == 0:
-            agent3.extract_policy()
+        # agent3.extract_policy()
         discretized_state = obs_to_state(env, state, n_states)
         cumulative_reward = 0
 
@@ -88,13 +88,13 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
                 r2 = reward + np.sin(3 * original_state[0])
                 r3 = reward + (original_state[1] * original_state[1])
                 r4 = abs(new_state[0] - (-0.5)) # r in [0, 1]
-                reward = r4
 
                 new_state = np.reshape(new_state, [1, 2])
 
-                agent1.memoise((state, next_action, reward, new_state, end))
-                agent2.update_q((discretized_state[0], discretized_state[1]), (new_discretized_state[0], new_discretized_state[1]), next_action, reward)
-                agent3.update_q((discretized_state[0], discretized_state[1]), (new_discretized_state[0], new_discretized_state[1]), next_action, reward)
+                agent1.memoise((state, next_action, r4, new_state, end))
+                #agent2.update_q((discretized_state[0], discretized_state[1]), (new_discretized_state[0], new_discretized_state[1]), next_action, reward)
+                #agent3.update_q((discretized_state[0], discretized_state[1]), (new_discretized_state[0], new_discretized_state[1]), next_action, reward)
+                agent4.memoise((state, next_action, r4, new_state, end))
 
 
                 if end:
@@ -112,6 +112,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
                     cumulative_reward += reward
                 
                 agent1.learn()
+                agent4.learn()
 
             cumulative_reward += reward
             scores.append(cumulative_reward)
@@ -136,6 +137,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
                     new_state, reward, end, _ = env.step(next_action)
                     new_discretized_state = obs_to_state(env, new_state, n_states)
                     original_state = new_state
+                    new_state = np.reshape(new_state, [1, 2])
 
 
                     if end:
@@ -164,11 +166,11 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
 
 
 # Training
-train_res = experiment(505)
+train_res = experiment(200)
 training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
 
-np.savetxt("results/ens_mixed_major.csv", train_res["steps"], delimiter=',')
+np.savetxt("results/ens_mixed_trust_cont.csv", train_res["steps"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps)

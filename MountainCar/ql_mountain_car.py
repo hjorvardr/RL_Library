@@ -36,7 +36,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     else:
         agent = QLAgent([n_states, n_states, env.action_space.n], epsilon_decay_function=lambda e: e * 0.6, epsilon_lower_bound=0.1)
 
-    for i_episode in tqdm(range(n_episodes), desc="Episode"):
+    for _ in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
         state = obs_to_state(env, state, n_states)
         cumulative_reward = 0
@@ -45,7 +45,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
             if (render):
                 env.render()
             
-            next_action = agent.act((state[0], state[1]), i_episode)
+            next_action = agent.act((state[0], state[1]))
             new_state, reward, end, _ = env.step(next_action)
             new_state = obs_to_state(env, new_state, n_states)
             if policy is None:

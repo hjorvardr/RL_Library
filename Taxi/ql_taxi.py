@@ -25,7 +25,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     else:
         agent = QLAgent([env.observation_space.n, env.action_space.n])
 
-    for i_episode in tqdm(range(n_episodes)):
+    for _ in tqdm(range(n_episodes)):
         state = env.reset()
         cumulative_reward = 0
         
@@ -34,7 +34,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
                 env.render()
                 time.sleep(1)
             
-            next_action = agent.act(state, i_episode)
+            next_action = agent.act(state)
             new_state, reward, end, _ = env.step(next_action)
             if policy is None:
                 agent.update_q(state, new_state, next_action, reward)

@@ -11,8 +11,8 @@ from tqdm import tqdm
 from dqn_lib import DQNAgent
 
 os.environ['PYTHONHASHSEED'] = '0'
-np.random.seed(43)
-tf.set_random_seed(43)
+np.random.seed(17)
+tf.set_random_seed(17)
 
 def accuracy(results):
     """
@@ -27,7 +27,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
     steps = [] # Steps per episode
     
     env = gym.make('MountainCar-v0')
-    env.seed(43)
+    env.seed(17)
 
     input_dim = env.observation_space.shape[0]
     output_dim = env.action_space.n
@@ -48,8 +48,8 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
         cumulative_reward = 0
 
         if i_episode > 0 and (i_episode % 100) == 0 and not default_policy:
-            agent.save_model("43-tmp_model")
-            evaluation_result = experiment(500, default_policy=True, policy="43-tmp_model")
+            agent.save_model("tmp_model")
+            evaluation_result = experiment(500, default_policy=True, policy="tmp_model")
             acc = accuracy(evaluation_result["results"])
             if acc == 100:
                 break
@@ -66,7 +66,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
             next_action = agent.act(state)                       
             new_state, reward, end, _ = env.step(next_action)
 
-            # reward = abs(new_state[0] - (-0.5)) # r in [0, 1]
+            reward = abs(new_state[0] - (-0.5)) # r in [0, 1]
             new_state = np.reshape(new_state, [1, 2])
             
             agent.memoise((state, next_action, reward, new_state, end))
@@ -133,7 +133,7 @@ layers = [layer1, layer2]
 # experiments.append(("model20", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)))
 # experiments.append(("model21", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=2000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)))
 # experiments.append(("model22", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=3000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), tb_dir=None)))
-experiments.append(("43-model23", 25000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.01, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
+experiments.append(("model23", 25000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=1000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.01, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model24", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=2000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model25", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=3000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
 # experiments.append(("model26", 10000, DQNAgent(output_dim, layers, use_ddqn=True, learn_thresh=4000, update_rate=300, epsilon_decay_function=lambda e: e * 0.995, epsilon_lower_bound=0.1, optimizer=keras.optimizers.Adam(0.001), tb_dir=None)))
@@ -196,7 +196,7 @@ def train_and_test(experiments):
 
         df.loc[len(df)] = [model_name, len(train_res["steps"]), training_mean_score, training_mean_steps, testing_accuracy, testing_mean_score, testing_mean_steps]
 
-    df.to_csv('43-experiments.csv')
+    df.to_csv('experiments.csv')
 
 def main():
     train_and_test(experiments)

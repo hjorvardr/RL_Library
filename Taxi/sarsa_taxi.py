@@ -23,9 +23,9 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     if (default_policy):
         agent = SARSAAgent([env.observation_space.n, env.action_space.n], policy=policy)
     else:
-        agent = SARSAAgent([env.observation_space.n, env.action_space.n], epsilon_decay_function=lambda e: e - 0.000016)
+        agent = SARSAAgent([env.observation_space.n, env.action_space.n], epsilon_decay_function=lambda e: e - 0.000016, update_rate=10)
 
-    for i_episode in tqdm(range(n_episodes)):
+    for _ in tqdm(range(n_episodes)):
         state = env.reset()
         cumulative_reward = 0
         if not default_policy:
@@ -36,7 +36,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
                 env.render()
                 time.sleep(1)
             
-            next_action = agent.act(state, i_episode)
+            next_action = agent.act(state)
             new_state, reward, end, _ = env.step(next_action)
             if policy is None:
                 agent.update_q(state, new_state, next_action, reward)
@@ -61,7 +61,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
 
 
 # Training
-train_res = experiment(30000)
+train_res = experiment(10000)
 learnt_policy = np.argmax(train_res["Q"], axis=1)
 # print("Policy learnt: ", learnt_policy)
 training_mean_steps = train_res["steps"].mean()
