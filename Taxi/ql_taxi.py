@@ -1,9 +1,10 @@
 import time
-import numpy as np
 import gym
+import numpy as np
 from tqdm import tqdm
 from qlearning_lib import QLAgent
 
+seed = 91
 
 def accuracy(results):
     """
@@ -18,7 +19,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     steps = [] # Steps per episode
 
     env = gym.make('Taxi-v2')
-    env.seed(91)
+    env.seed(seed)
     
     if (default_policy):
         agent = QLAgent([env.observation_space.n, env.action_space.n], policy=policy)
@@ -64,9 +65,8 @@ learnt_policy = np.argmax(train_res["Q"], axis=1)
 training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
 np.save('ql_policy.npy', learnt_policy)
-#print("Policy learnt: ", learnt_policy)
 
-# np.savetxt("results/ql.csv", train_res["scores"], delimiter=',')
+# np.savetxt("results/training/ql.csv", train_res["scores"], delimiter=',')
 
 # Testing
 test_agent = np.load('ql_policy.npy')
@@ -75,7 +75,7 @@ testing_accuracy = accuracy(test_res["results"])
 testing_mean_steps = test_res["steps"].mean()
 testing_mean_score = test_res["scores"].mean()
 
-# np.savetxt("results/ql.csv", test_res["scores"], delimiter=',')
+# np.savetxt("results/testing/ql.csv", test_res["scores"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)

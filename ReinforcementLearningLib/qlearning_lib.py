@@ -64,5 +64,3 @@ class QLAgent:
         max_indexes = np.arange(len(state))[state == max_value]
         np.random.shuffle(max_indexes)
         return max_indexes[0]
-
-    

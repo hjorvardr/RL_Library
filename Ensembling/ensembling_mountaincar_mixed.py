@@ -1,29 +1,30 @@
+import os
 import time
 import gym
-import numpy as np
-from tqdm import tqdm
-import os
-import random as ran
-import numpy as np
-import keras.optimizers 
-import tensorflow as tf
 from keras import backend as K
 from keras.layers import Dense
+import keras.optimizers 
+import numpy as np
 import tensorflow as tf
+from tqdm import tqdm
 from dqn_lib import DQNAgent
 from sarsa_lib import SARSAAgent, QLAgent
 from ensembler import *
 
+seed = 91
+
 os.environ['PYTHONHASHSEED'] = '0'
-np.random.seed(91)
-tf.set_random_seed(91)
+np.random.seed(seed)
+tf.set_random_seed(seed)
 n_states = 150
+
 
 def accuracy(results):
     """
     Evaluate the accuracy of results, considering victories and defeats.
     """
     return results[1] / (results[0] + results[1]) * 100
+
 
 def obs_to_state(env, obs, n_states):
     """ Maps an observation to state """
@@ -34,13 +35,14 @@ def obs_to_state(env, obs, n_states):
     b = int((obs[1] - env_low[1]) / env_dx[1])
     return a, b
 
+
 def experiment(n_episodes, default_policy=False, policy=None, render=False):
     res = [0, 0] # array of results accumulator: {[0]: Loss, [1]: Victory}
     scores = [] # Cumulative rewards
     steps = [] # Steps per episode
     
     env = gym.make('MountainCar-v0')
-    env.seed(91)
+    env.seed(seed)
 
     input_dim = env.observation_space.shape[0]
     output_dim = env.action_space.n
@@ -170,7 +172,7 @@ train_res = experiment(200)
 training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
 
-np.savetxt("results/ens_mixed_trust_cont.csv", train_res["steps"], delimiter=',')
+# np.savetxt("results/ens_mixed_trust_cont.csv", train_res["steps"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps)

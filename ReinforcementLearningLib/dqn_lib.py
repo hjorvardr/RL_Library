@@ -1,10 +1,9 @@
-import random as ran
-import numpy as np
-import tensorflow as tf
 from keras import backend as K
+from keras.callbacks import TensorBoard
 from keras.models import Sequential, load_model
 from keras.optimizers import RMSprop, Adam
-from keras.callbacks import TensorBoard
+import numpy as np
+import tensorflow as tf
 from ring_buffer import RingBuffer
 
 
@@ -137,4 +136,3 @@ class DQNAgent:
     
     def load_model(self, filename):
         return load_model('%s.h5' % filename, custom_objects={ 'huber_loss': huber_loss })
-

@@ -1,9 +1,10 @@
 import time
-import numpy as np
 import gym
+import numpy as np
 from tqdm import tqdm
 from qlearning_lib import QLAgent
 
+seed = 91
 
 def accuracy(results):
     """
@@ -18,7 +19,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     steps = [] # Steps per episode
 
     env = gym.make('FrozenLake-v0')
-    env.seed(91)
+    env.seed(seed)
     
     if (default_policy):
         agent = QLAgent([env.observation_space.n, env.action_space.n], policy=policy)

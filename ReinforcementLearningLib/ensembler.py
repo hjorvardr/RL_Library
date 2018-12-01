@@ -1,6 +1,7 @@
 import numpy as np
 from enum import Enum
 
+
 class EnsemblerType(Enum):
     MAJOR_VOTING_BASED = 0
     TRUST_BASED = 1
@@ -8,6 +9,7 @@ class EnsemblerType(Enum):
 
 
 class EnsemblerAgent:
+
     def __init__(self, output_size, agents, ensembler_type):
         self.agents = agents
         self.output_size = output_size
@@ -29,8 +31,6 @@ class EnsemblerAgent:
             for i in range(len(self.trust)):
                 self.trust[i] = 1 / len(self.agents)
             # print("INITIAL TRUST: ", self.trust)
-
-
 
     def act(self, state, discrete_state=None):
         original_state = state

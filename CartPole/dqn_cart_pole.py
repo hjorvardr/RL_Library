@@ -1,27 +1,17 @@
 import os
 import time
 import gym
-import numpy as np
 import keras.optimizers 
-import tensorflow as tf
 from keras import backend as K
 from keras.layers import Dense
+import numpy as np
+import tensorflow as tf
 from tqdm import tqdm
 from dqn_lib import DQNAgent
 
 os.environ['PYTHONHASHSEED'] = '0'
-
 seed = 73
-# The below is necessary for starting Numpy generated random numbers
-# in a well-defined initial state.
-
 np.random.seed(seed)
-
-# The below is necessary for starting core Python generated random numbers
-# in a well-defined state.
-
-# random.seed(seed)
-
 tf.set_random_seed(seed)
 
 
@@ -43,14 +33,16 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
 
     input_dim = env.observation_space.shape[0]
     output_dim = env.action_space.n
-
-    layer1 = Dense(10, input_dim=input_dim, activation='relu')
-    layer2 = Dense(output_dim)
         
     if default_policy:
-        agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0, epsilon_lower_bound=0, learn_thresh=0, tb_dir=None)
+        agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy,
+                        epsilon=0, epsilon_lower_bound=0, learn_thresh=0, tb_dir=None)
     else:
-        agent = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
+        layer1 = Dense(10, input_dim=input_dim, activation='relu')
+        layer2 = Dense(output_dim)
+        agent = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100,
+                        epsilon_decay_function=lambda e: e - 0.001, epsilon_lower_bound=0.1,
+                        optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
 
     for _ in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
@@ -65,7 +57,6 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
                 time.sleep(0.1)
 
             next_action = agent.act(state)
-                    
             new_state, reward, end, _ = env.step(next_action)
 
             x, x_dot, theta, theta_dot = new_state
@@ -75,19 +66,15 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
             r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
             r3 = -abs(theta_dot)
             reward = r1 + r2 + r3
-            # reward = r1 + r2
-            # reward = r1
             
             agent.memoise((state, next_action, reward, new_state, end))
 
             if end or t > 199:
                 if  t < 195:
                     res[0] += 1
-                    #reward = reward - 100
-                    #memory.append((state, next_action, reward, new_state, end))
                 else:
                     res[1] += 1
-                    print("ENTRATO!,", t, "steps","reward: ",cumulative_reward)
+                    # print("ENTRATO!,", t, "steps","reward: ",cumulative_reward)
 
                 steps.append(t)
                 break
@@ -124,4 +111,4 @@ print("Training episodes:", len(train_res["steps"]), "Training mean score:", tra
 "Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)
 
 # Rendering
-# experiment(1, render=True, default_policy=True, policy="model1")
+# experiment(1, render=True, default_policy=True, policy="model_cp")

@@ -1,15 +1,15 @@
-import random as ran
 import os
+import random as ran
 import time
 import gym
-import numpy as np
-import tensorflow as tf
 from keras import backend as K
 from keras.initializers import VarianceScaling
 from keras.layers import Dense, Flatten
 from keras.layers.convolutional import Conv2D
+import numpy as np
 from skimage.color import rgb2gray
 from skimage.transform import resize
+import tensorflow as tf
 from tqdm import tqdm
 from dqn_lib import DQNAgent
 
@@ -22,11 +22,7 @@ def pre_processing(observe):
     return processed_observe
 
 
-# 0: stay
-# 1: start
-# 2: right
-# 3: left
-
+# 0: stay, 1: start, 2: right, 3: left
 def experiment(n_episodes, max_action, default_policy=False, policy=None, render=False):
 
     with tf.device('/gpu:0'):
@@ -36,24 +32,18 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
         
         env = gym.make('BreakoutDeterministic-v4')
 
-        # if default_policy:
-        #     env._max_episode_steps = 5000000
-        # else:
-        #     env._max_episode_steps = 1000000
-        
         input_dim = env.observation_space.shape[0]
         output_dim = env.action_space.n
-
-        layers = [Conv2D(32, (8, 8), strides=(4, 4), activation='relu', input_shape=(84, 84, 4), kernel_initializer=VarianceScaling(scale=2.0)),
-                  Conv2D(64, (4, 4), strides=(2, 2), activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
-                  Conv2D(64, (3, 3), strides=(1, 1), activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
-                  Flatten(),
-                  Dense(512, activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
-                  Dense(output_dim)]
             
         if default_policy:
             agent = DQNAgent(output_dim, None, use_ddqn=True, default_policy=True, model_filename=policy, epsilon=0.05, epsilon_lower_bound=0.05)
         else:
+            layers = [Conv2D(32, (8, 8), strides=(4, 4), activation='relu', input_shape=(84, 84, 4), kernel_initializer=VarianceScaling(scale=2.0)),
+                    Conv2D(64, (4, 4), strides=(2, 2), activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
+                    Conv2D(64, (3, 3), strides=(1, 1), activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
+                    Flatten(),
+                    Dense(512, activation='relu', kernel_initializer=VarianceScaling(scale=2.0)),
+                    Dense(output_dim)]
             agent = DQNAgent(output_dim, layers, use_ddqn=True, memory_size=720000, gamma=0.99)
 
         gathered_frame = 0
@@ -65,6 +55,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                 
             has_lost_life = True
             start_life = env.unwrapped.ale.lives()
+
             t = 0
             while True:
                 if has_lost_life:
@@ -80,6 +71,7 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
                         new_stack = np.append(new_state, stack[:, :, :, :3], axis=3)
                         agent.memoise((stack, next_action, reward, new_state, end))
                         stack = new_stack
+
                         if (render):
                             env.render()
 
@@ -87,9 +79,12 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
 
                 next_action = agent.act(stack)
                 new_state, reward, end, info = env.step(next_action)
+
                 if (render):
                     env.render()
+
                 reward = np.clip(reward, -1., 1.)
+
                 if info['ale.lives'] < start_life:
                     has_lost_life = True
                     start_life = info['ale.lives']
@@ -120,14 +115,13 @@ def experiment(n_episodes, max_action, default_policy=False, policy=None, render
             if episode_number >= 100 and episode_number % 50 == 0:
                 model_name = "partial_model_breakout" + str(episode_number)
                 agent.save_model(model_name)
-
         
         env.close()
         return {"results": np.array(res), "steps": np.array(steps), "scores": np.array(scores), "agent": agent}
     
 # Training
-#res = experiment(100000, 10000000, render=False)
-#res["agent"].save_model("final_model")
+res = experiment(100000, 10000000, render=False)
+res["agent"].save_model("ddqn")
 
 # Testing
-res = experiment(20, 10000000, render=True, default_policy=True, policy="partial_model_breakout12250")
+res = experiment(20, 10000000, render=True, default_policy=True, policy="ddqn")

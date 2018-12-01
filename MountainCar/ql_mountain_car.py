@@ -4,6 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from qlearning_lib import QLAgent
 
+seed = 91
 
 def accuracy(results):
     """
@@ -28,13 +29,15 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     steps = [] # Steps per episode
     
     env = gym.make('MountainCar-v0')
-    env.seed(91)
+    env.seed(seed)
     n_states = 150
 
     if (default_policy):
-        agent = QLAgent([n_states, n_states, env.action_space.n], policy=policy, epsilon=0.01, epsilon_lower_bound=0.01)
+        agent = QLAgent([n_states, n_states, env.action_space.n], policy=policy,
+                       epsilon=0.01, epsilon_lower_bound=0.01)
     else:
-        agent = QLAgent([n_states, n_states, env.action_space.n], epsilon_decay_function=lambda e: e * 0.6, epsilon_lower_bound=0.1)
+        agent = QLAgent([n_states, n_states, env.action_space.n],
+                       epsilon_decay_function=lambda e: e * 0.6, epsilon_lower_bound=0.1)
 
     for _ in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
@@ -62,6 +65,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
             else:
                 state = new_state
                 cumulative_reward += reward
+
         cumulative_reward += reward
         scores.append(cumulative_reward)
     env.close()
@@ -75,7 +79,7 @@ training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
 np.save('ql_policy.npy', learnt_policy)
 
-# np.savetxt("results/ql.csv", train_res["steps"], delimiter=',')
+# np.savetxt("results/training/ql.csv", train_res["steps"], delimiter=',')
 
 # Testing
 test_agent = np.load('ql_policy.npy')
@@ -84,7 +88,7 @@ testing_accuracy = accuracy(test_res["results"])
 testing_mean_steps = test_res["steps"].mean()
 testing_mean_score = test_res["scores"].mean()
 
-# np.savetxt("results/ql_test.csv", test_res["steps"], delimiter=',')
+# np.savetxt("results/testing/ql.csv", test_res["steps"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)

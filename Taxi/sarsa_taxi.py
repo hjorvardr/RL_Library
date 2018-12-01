@@ -1,9 +1,10 @@
 import time
-import numpy as np
 import gym
+import numpy as np
 from tqdm import tqdm
 from sarsa_lib import SARSAAgent
 
+seed = 91
 
 def accuracy(results):
     """
@@ -18,16 +19,18 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     steps = [] # Steps per episode
 
     env = gym.make('Taxi-v2')
-    env.seed(91)
+    env.seed(seed)
     
     if (default_policy):
         agent = SARSAAgent([env.observation_space.n, env.action_space.n], policy=policy)
     else:
-        agent = SARSAAgent([env.observation_space.n, env.action_space.n], epsilon_decay_function=lambda e: e - 0.000016, update_rate=10)
+        agent = SARSAAgent([env.observation_space.n, env.action_space.n],
+                          epsilon_decay_function=lambda e: e - 0.000016, update_rate=10)
 
     for _ in tqdm(range(n_episodes)):
         state = env.reset()
         cumulative_reward = 0
+
         if not default_policy:
             agent.extract_policy()
         
@@ -63,12 +66,11 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
 # Training
 train_res = experiment(10000)
 learnt_policy = np.argmax(train_res["Q"], axis=1)
-# print("Policy learnt: ", learnt_policy)
 training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
 np.save('sarsa_policy.npy', learnt_policy)
 
-# np.savetxt("results/sarsa.csv", train_res["scores"], delimiter=',')
+# np.savetxt("results/training/sarsa.csv", train_res["scores"], delimiter=',')
 
 # Testing
 test_agent = np.load('sarsa_policy.npy')
@@ -77,7 +79,7 @@ testing_accuracy = accuracy(test_res["results"])
 testing_mean_steps = test_res["steps"].mean()
 testing_mean_score = test_res["scores"].mean()
 
-# np.savetxt("results/sarsa.csv", test_res["scores"], delimiter=',')
+# np.savetxt("results/testing/sarsa.csv", test_res["scores"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)

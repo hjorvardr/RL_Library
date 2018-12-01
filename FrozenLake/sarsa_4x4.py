@@ -1,9 +1,10 @@
 import time
-import numpy as np
 import gym
+import numpy as np
 from tqdm import tqdm
 from sarsa_lib import SARSAAgent
 
+seed = 91
 
 def accuracy(results):
     """
@@ -18,16 +19,18 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     steps = [] # Steps per episode
 
     env = gym.make('FrozenLake-v0')
-    env.seed(91)
+    env.seed(seed)
     
     if (default_policy):
         agent = SARSAAgent([env.observation_space.n, env.action_space.n], policy=policy)
     else:
-        agent = SARSAAgent([env.observation_space.n, env.action_space.n], update_rate=15, epsilon_decay_function=lambda e: e * 0.995)
+        agent = SARSAAgent([env.observation_space.n, env.action_space.n], update_rate=15,
+                          epsilon_decay_function=lambda e: e * 0.995)
 
     for _ in tqdm(range(n_episodes)):
         state = env.reset()
         cumulative_reward = 0
+
         if not default_policy:
             agent.extract_policy()
         

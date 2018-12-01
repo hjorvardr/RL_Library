@@ -1,6 +1,7 @@
 from random import randint
 
 class RingBuffer:
+
 	def __init__(self, max_buffer_size):
 		self.max_buffer_size = max_buffer_size
 		self.current_index = 0

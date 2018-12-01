@@ -1,28 +1,18 @@
 import os
 import time
 import gym
-import numpy as np
-import keras.optimizers 
-import tensorflow as tf
 from keras import backend as K
 from keras.layers import Dense
+import keras.optimizers 
+import numpy as np
+import tensorflow as tf
 from tqdm import tqdm
 from dqn_lib import DQNAgent
 from ensembler import *
 
 os.environ['PYTHONHASHSEED'] = '0'
-
 seed = 73
-# The below is necessary for starting Numpy generated random numbers
-# in a well-defined initial state.
-
 np.random.seed(seed)
-
-# The below is necessary for starting core Python generated random numbers
-# in a well-defined state.
-
-# random.seed(seed)
-
 tf.set_random_seed(seed)
 
 
@@ -31,6 +21,7 @@ def accuracy(results):
     Evaluate the accuracy of results, considering victories and defeats.
     """
     return results[1] / (results[0] + results[1]) * 100
+
 
 def evaluate(env, agentE):
     eval_steps = []
@@ -67,15 +58,12 @@ def evaluate(env, agentE):
     training_mean_steps = np.array(eval_steps).mean()
     training_mean_score = np.array(eval_scores).mean()
 
-
-
     print("\nEval episodes:", 200, "Eval mean score:", training_mean_score, \
     "Eval mean steps", training_mean_steps, "accuracy:",accuracy(eval_res))
     
     if accuracy(eval_res) == 100:
         return True
     return False
-
 
 
 def experiment(n_episodes, default_policy=False, policy=None, render = False):
@@ -106,8 +94,9 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
         agent8 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.0001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
         agent9 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.0001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
         agent10 = DQNAgent(output_dim, [layer1, layer2], use_ddqn=True, learn_thresh=2000, update_rate=100, epsilon_decay_function=lambda e: e - 0.0001, epsilon_lower_bound=0.1, optimizer=keras.optimizers.RMSprop(0.001), memory_size=2000, tb_dir=None)
+        agents =  [agent1, agent2, agent3, agent4, agent5, agent6, agent7, agent8, agent9, agent10]
 
-        agentE = EnsemblerAgent(output_dim, [agent1, agent2, agent3, agent4, agent5, agent6, agent7], EnsemblerType.TRUST_BASED)
+        agentE = EnsemblerAgent(output_dim, agents, EnsemblerType.TRUST_BASED)
 
     for i_ep in tqdm(range(n_episodes), desc="Episode"):
         state = env.reset()
@@ -178,7 +167,7 @@ train_res = experiment(100)
 training_mean_steps = train_res["steps"].mean()
 training_mean_score = train_res["scores"].mean()
 
-np.savetxt("results/ens_agents10_trust.csv", train_res["steps"], delimiter=',')
+# np.savetxt("results/ens_agents10_trust.csv", train_res["steps"], delimiter=',')
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps)

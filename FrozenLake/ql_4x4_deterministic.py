@@ -1,9 +1,10 @@
 import time
-import numpy as np
 import gym
+import numpy as np
 from tqdm import tqdm
 from qlearning_lib import QLAgent
 
+seed = 91
 
 def accuracy(results):
     """
@@ -18,7 +19,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False):
     steps = [] # Steps per episode
 
     env = gym.make('FrozenLakeNotSlippery-v0')
-    env.seed(91)
+    env.seed(seed)
     
     if (default_policy):
         agent = QLAgent([env.observation_space.n, env.action_space.n], policy=policy, alpha=1)
@@ -80,7 +81,6 @@ testing_mean_score = test_res["scores"].mean()
 
 print("Training episodes:", len(train_res["steps"]), "Training mean score:", training_mean_score, \
 "Training mean steps", training_mean_steps, "\nAccuracy:", testing_accuracy, "Test mean score:", testing_mean_score, "Test mean steps:", testing_mean_steps)
-
 
 # Rendering
 #experiment(5, default_policy=True, policy=learnt_policy, render=True)

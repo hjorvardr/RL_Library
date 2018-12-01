@@ -1,17 +1,17 @@
-import random as ran
-from collections import deque
-import numpy as np
-import tensorflow as tf
 from keras import backend as K
-from keras.models import Sequential, load_model, Model
-from keras.optimizers import RMSprop, Adam
 from keras.callbacks import TensorBoard
 from keras.layers import Dense, Dropout, Input
 from keras.layers.merge import Add, Multiply
+from keras.models import Sequential, load_model, Model
+from keras.optimizers import RMSprop, Adam
+import numpy as np
+import tensorflow as tf
 
 
 class ACAgent:
+
     class Actor:
+
         def __init__(self, layers, tb_dir, default_policy=None):
             self.loss = "mean_squared_error"
             self.optimizer = Adam(lr=0.0001)
@@ -31,7 +31,6 @@ class ACAgent:
             else:
                 self.model = default_policy
 
-
         def learn(self, state, action, td_error):
             new_prediction = self.model.predict(state)
             new_prediction[0][action] = -td_error
@@ -44,6 +43,7 @@ class ACAgent:
 
 
     class Critic:
+
         def __init__(self, layers, tb_dir, default_policy=None):
             self.optimizer = Adam(lr=0.001)
             self.gamma = 0.9
@@ -64,10 +64,8 @@ class ACAgent:
             else:
                 self.model = default_policy
 
-        
         def learn(self, state, new_state, reward):
             td_error = reward + self.gamma * self.model.predict(new_state)[0] - self.model.predict(state)[0]
-
 
             if (self.tb_step % self.tb_gather) == 0 and self.tb_dir is not None:
                 self.model.fit(state, td_error, verbose=0, callbacks=[self.tensorboard_critic])
