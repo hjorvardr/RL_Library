@@ -14,9 +14,17 @@ from tqdm import tqdm
 from dqn_lib import DQNAgent
 
 
-# Original size: 210x160x3
 def pre_processing(observe):
-    grayscaled = rgb2gray(observe) # 210x160
+    """
+    Frame grayscaling and subsampling
+
+    Args:
+        observe: input frame
+        
+    Returns:
+        processed_observed: output frame
+    """
+    grayscaled = rgb2gray(observe) # From 210x160x3 to 210x160
     grayscaled = grayscaled[16:201,:]
     processed_observe = np.uint8(resize(grayscaled, (84, 84), mode='constant') * 255)
     return processed_observe
@@ -24,6 +32,23 @@ def pre_processing(observe):
 
 # 0: stay, 1: start, 2: right, 3: left
 def experiment(n_episodes, max_action, default_policy=False, policy=None, render=False):
+    """
+    Run a RL experiment that can be either training or testing
+
+    Args:
+        n_episodes: number of train/test episodes
+        max_action: maximum number of steps per episode
+        default_policy: boolean to enable testing/training phase
+        policy: numpy tensor with a trained policy
+        render: enable OpenAI environment graphical rendering
+
+    Returns:
+        Dictionary with:
+            cumulative experiments outcomes
+            list of steps per episode
+            list of cumulative rewards
+            trained policy
+    """
 
     with tf.device('/gpu:0'):
         res = [0,0] # array of results accumulator: {[0]: Loss, [1]: Victory}

@@ -18,11 +18,34 @@ tf.set_random_seed(seed)
 def accuracy(results):
     """
     Evaluate the accuracy of results, considering victories and defeats.
+
+    Args:
+        results: List of 2 elements representing the number of victories and defeats
+
+    Returns:
+        results accuracy
     """
     return results[1] / (results[0] + results[1]) * 100
 
 
 def experiment(n_episodes, default_policy=False, policy=None, render=False, agent_config=None):
+    """
+    Run a RL experiment that can be either training or testing
+
+    Args:
+        n_episodes: number of train/test episodes
+        default_policy: boolean to enable testing/training phase
+        policy: numpy tensor with a trained policy
+        render: enable OpenAI environment graphical rendering
+        agent_config: DQNAgent object
+
+    Returns:
+        Dictionary with:
+            cumulative experiments outcomes
+            list of steps per episode
+            list of cumulative rewards
+            trained policy
+    """
     res = [0, 0] # array of results accumulator: {[0]: Loss, [1]: Victory}
     scores = [] # Cumulative rewards
     steps = [] # Steps per episode
@@ -51,6 +74,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
         state = env.reset()
         cumulative_reward = 0
 
+        # Model validation for early stopping
         if i_episode > 0 and (i_episode % 100) == 0 and not default_policy:
             agent.save_model("tmp_model")
             evaluation_result = experiment(500, default_policy=True, policy="tmp_model")
@@ -69,7 +93,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render=False, agen
             next_action = agent.act(state)                       
             new_state, reward, end, _ = env.step(next_action)
 
-            reward = abs(new_state[0] - (-0.5)) # r in [0, 1]
+            reward = abs(new_state[0] - (-0.5)) # r in [0, 1] (reward shaping)
             new_state = np.reshape(new_state, [1, 2])
             
             agent.memoise((state, next_action, reward, new_state, end))

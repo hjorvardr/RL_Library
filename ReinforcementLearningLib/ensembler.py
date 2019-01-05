@@ -11,6 +11,12 @@ class EnsemblerType(Enum):
 class EnsemblerAgent:
 
     def __init__(self, output_size, agents, ensembler_type):
+        """
+        Args:
+            output_size: number of actions
+            agents: list of RL agents
+            ensembler_type: type of ensembling by EnsemblerType enum
+        """
         self.agents = agents
         self.output_size = output_size
         self.ensembler_type = ensembler_type
@@ -30,9 +36,18 @@ class EnsemblerAgent:
 
             for i in range(len(self.trust)):
                 self.trust[i] = 1 / len(self.agents)
-            # print("INITIAL TRUST: ", self.trust)
 
     def act(self, state, discrete_state=None):
+        """
+        Return the action for current state.
+
+        Args:
+            state: current state
+            discrete_state: discretised current state
+
+        Returns:
+            action: next action to perform
+        """
         original_state = state
         if self.ensembler_type == EnsemblerType.MAJOR_VOTING_BASED:
             for agent in self.agents:
@@ -84,17 +99,16 @@ class EnsemblerAgent:
             action = np.random.choice(np.argwhere(self.votes==np.amax(self.votes)).flatten())
             self.votes = np.zeros(self.output_size)
             return action
-        # for RANKING VOTING
-        #array = np.array([4,2,7,1])
-        #temp = array.argsort()
-        #ranks = np.empty_like(temp)
-        #ranks[temp] = np.arange(len(array))
-
         return 73 # Houston, we have a problem!
     
     def trust_update(self, win):
+        """
+        Update Gamma trust vector.
+
+        Args:
+            win: result of current game
+        """
         if self.ensembler_type == EnsemblerType.TRUST_BASED:
-            # print(self.votes_per_agent, "win:", win, "total actions:", self.total_actions)
             for i in range(len(self.agents)):
                 if win:
                     self.trust[i] = self.trust[i] * (1 + self.trust_rate * (self.votes_per_agent[i] / self.total_actions))
@@ -104,5 +118,4 @@ class EnsemblerAgent:
             self.trust = self.trust / sum(self.trust)
             self.votes_per_agent = np.zeros(len(self.agents))
             self.total_actions = 0
-            # print(self.trust)
                     

@@ -18,11 +18,34 @@ tf.set_random_seed(seed)
 def accuracy(results):
     """
     Evaluate the accuracy of results, considering victories and defeats.
+
+    Args:
+        results: List of 2 elements representing the number of victories and defeats
+
+    Returns:
+        results accuracy
     """
     return results[1] / (results[0] + results[1]) * 100
 
 
 def experiment(n_episodes, default_policy=False, policy=None, render = False):
+    """
+    Run a RL experiment that can be either training or testing
+
+    Args:
+        n_episodes: number of train/test episodes
+        default_policy: boolean to enable testing/training phase
+        policy: numpy tensor with a trained policy
+        render: enable OpenAI environment graphical rendering
+        agent_config: DQNAgent object
+
+    Returns:
+        Dictionary with:
+            cumulative experiments outcomes
+            list of steps per episode
+            list of cumulative rewards
+            trained policy
+    """
     res = [0, 0] # array of results accumulator: {[0]: Loss, [1]: Victory}
     scores = [] # Cumulative rewards
     steps = [] # steps per episode
@@ -62,6 +85,7 @@ def experiment(n_episodes, default_policy=False, policy=None, render = False):
             x, x_dot, theta, theta_dot = new_state
             new_state = np.reshape(new_state, [1, 4])
             
+            # Reward shaping
             r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
             r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
             r3 = -abs(theta_dot)

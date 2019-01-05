@@ -8,6 +8,17 @@ from ring_buffer import RingBuffer
 
 
 def huber_loss(a, b, in_keras=True):
+    """
+    Apply Huber loss function
+
+    Args:
+        a: target value
+        b: predicted value
+        in_keras: use keras backend
+
+    Returns:
+        Huber loss value
+    """
     error = a - b
     quadratic_term = error*error / 2
     linear_term = abs(error) - 1/2
@@ -24,6 +35,24 @@ class DQNAgent:
                  epsilon=1, epsilon_lower_bound=0.1, epsilon_decay_function=lambda e: e - (0.9 / 1000000),
                  gamma=0.95, optimizer=RMSprop(0.00025), learn_thresh=50000,
                  update_rate=10000):
+        """
+        Args:
+            output_size: number of actions
+            layers: list of Keras layers
+            memory_size: size of replay memory
+            batch_size: size of batch for replay memory
+            use_ddqn: boolean for choosing between DQN/DDQN
+            default_policy: boolean for loading a model from a file
+            model_filename: name of file to load
+            tb_dir: directory for tensorboard logging
+            epsilon: annealing function upper bound
+            epsilon_lower_bound: annealing function lower bound
+            epsilon_decay_function: lambda annealing function 
+            gamma: discount factor hyper parameter
+            optimizer: Keras optimiser
+            learn_thresh: number of steps to perform without learning
+            update_rate: number of steps between network-target weights copy
+        """
         self.output_size = output_size
         self.memory = RingBuffer(memory_size)
         self.use_ddqn = use_ddqn
@@ -56,9 +85,17 @@ class DQNAgent:
 
             if self.use_ddqn:
                 self.target_model = self.build_model(layers)
-        # self.evaluate_model.summary()
 
     def build_model(self, layers):
+        """
+        Build a Neural Network.
+
+        Args:
+            layers: list of Keras NN layers
+
+        Returns:
+            model: compiled model with embedded loss and optimiser
+        """
         model = Sequential()
         for l in layers:
             model.add(l)
@@ -67,15 +104,23 @@ class DQNAgent:
         return model
 
     def update_target_model(self):
+        """
+        Set target net weights to evaluation net weights.
+        """
         self.target_model.set_weights(self.evaluate_model.get_weights())
 
     def replay(self):
+        """
+        Perform DQN learning phase through experience replay.
+        """
         pick = self.random_pick()
         for state, next_action, reward, new_state, end in pick:
         # for state, next_action, reward, frame, end in pick:
-            # state = np.float32(state / 255) # TODO: generalisation
-            # frame = np.float32(frame / 255) # TODO: generalisation
-            # new_state = np.append(frame, state[:, :, :, :3], axis=3) # TODO: generalisation
+            # state = np.float32(state / 255) # for CNN learning
+            # frame = np.float32(frame / 255) # for CNN learning
+            # new_state = np.append(frame, state[:, :, :, :3], axis=3) # for CNN learning
+
+            # Simple DQN case
             if self.use_ddqn == False:
                 if not end:
                     reward = reward + self.gamma * np.amax(self.evaluate_model.predict(new_state)[0])
@@ -83,6 +128,7 @@ class DQNAgent:
                 new_prediction = self.evaluate_model.predict(state)
                 new_prediction[0][next_action] = reward
             else:
+                # Double DQN case
                 if not end:
                     action = np.argmax(self.evaluate_model.predict(new_state)[0])
                     reward = reward + self.gamma * self.target_model.predict(new_state)[0][action]
@@ -97,17 +143,36 @@ class DQNAgent:
             self.tb_step += 1
 
     def random_pick(self):
+        """
+        Pick a random set of elements from replay memory of size self.batch_size.
+
+        Returns:
+            set of random elements from memory
+        """
         return self.memory.random_pick(self.batch_size)
 
     def act(self, state, return_prob_dist=False):
+        """
+        Return the action for current state.
+
+        Args:
+            state: current state t
+            return_prob_dist: boolean for probability distribution used by ensemblers
+
+        Returns:
+            next_action: next action to perform
+            prediction: probability distribution
+        """
+        # Annealing
         if np.random.uniform() > self.epsilon:
-            # state = np.float32(state / 255) # TODO: generalisation
+            # state = np.float32(state / 255) # for CNN learning
             prediction = self.evaluate_model.predict(state)[0]
             next_action = np.argmax(prediction)
         else:
             prediction = np.random.uniform(0, 1, size=self.output_size)
             next_action = np.argmax(prediction)
 
+        # Start decaying after self.learn_thresh steps
         if self.total_steps > self.learn_thresh:
             self.epsilon = self.epsilon_decay_function(self.epsilon)
             self.epsilon = np.amax([self.epsilon, self.epsilon_lower_bound])
@@ -119,20 +184,45 @@ class DQNAgent:
         return next_action, prediction
 
     def memoise(self, t):
+        """
+        Store tuple to replay memory.
+
+        Args:
+            t: element to store
+        """
         if not self.default_policy:
             self.memory.append(t)
 
     def learn(self):
+        """
+        Perform the learning phase.
+        """
+        # Start target model update after self.learn_thresh steps
         if (self.total_steps > self.learn_thresh and
             (self.total_steps % self.update_rate) == 0 and not self.default_policy and
             self.use_ddqn == True):
             self.update_target_model()
-            # print("model updated, epsilon:", self.epsilon)
+        # Start learning after self.learn_thresh steps
         if self.total_steps > self.learn_thresh and not self.default_policy and self.total_steps % 4 == 0:   
             self.replay()
 
     def save_model(self, filename):
+        """
+        Serialise the model to .h5 file.
+
+        Args:
+            filename
+        """
         self.evaluate_model.save('%s.h5' % filename)
     
     def load_model(self, filename):
+        """
+        Load model from .h5 file
+
+        Args:
+            filename
+
+        Returns:
+            model
+        """
         return load_model('%s.h5' % filename, custom_objects={ 'huber_loss': huber_loss })
